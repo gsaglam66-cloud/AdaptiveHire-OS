@@ -1,113 +1,100 @@
 import streamlit as st
-import time
+import google.generativeai as genai
+from streamlit_mic_recorder import mic_recorder
+import plotly.graph_objects as go
+
+# --- AI AYARI ---
+# Buraya kendi API anahtarını yapıştırmayı unutma!
+API_KEY = "SENİN_API_KEYİN" 
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel('gemini-pro')
 
 # Sayfa Ayarları
-st.set_page_config(page_title="Adaptive Hire OS", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Adaptive Hire OS", layout="wide")
 
-# --- GELİŞMİŞ CSS: SIRI EFEKTİ & SİLİK YAZI STİLLERİ ---
+# --- SIRI & TRANSKRIPT STİLLERİ ---
 st.markdown("""
     <style>
-    /* Siri Halkası Animasyonu */
-    .siri-container { display: flex; justify-content: center; align-items: center; height: 150px; margin: 20px 0; }
+    .siri-container { display: flex; justify-content: center; align-items: center; height: 120px; }
     .siri-sphere {
-        width: 100px; height: 100px; border-radius: 50%;
+        width: 80px; height: 80px; border-radius: 50%;
         background: linear-gradient(45deg, #00d2ff, #3a7bd5, #ff00c1, #9d50bb);
         background-size: 400% 400%;
-        animation: siri-wave 3s ease infinite, siri-glow 2s ease-in-out infinite alternate;
+        animation: siri-wave 2s ease infinite alternate;
+        box-shadow: 0 0 30px rgba(0,210,255,0.5);
     }
-    @keyframes siri-wave {
-        0% { background-position: 0% 50%; transform: scale(1); }
-        50% { background-position: 100% 50%; transform: scale(1.05); }
-        100% { background-position: 0% 50%; transform: scale(1); }
-    }
-    @keyframes siri-glow {
-        from { box-shadow: 0 0 20px rgba(58,123,213,0.4); }
-        to { box-shadow: 0 0 50px rgba(255,0,193,0.6); }
-    }
+    @keyframes siri-wave { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.2); opacity: 1; } }
     
-    /* Yan Menü Klasör Yapısı */
-    .folder-label { color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
-    
-    /* Kart Tasarımı */
-    .setup-card {
-        background-color: white; padding: 30px; border-radius: 15px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;
+    .transcript-box {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 15px;
+        height: 300px;
+        overflow-y: auto;
+        border: 1px solid #e0e0e0;
+        font-family: 'Courier New', Courier, monospace;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SOL PANEL: ARŞİV VE HİYERARŞİ ---
-with st.sidebar:
-    st.markdown("### 📂 Kayıt Arşivi")
-    
-    # Kurum Klasörü
-    with st.expander("🏢 Kurum Seçin...", expanded=True):
-        # BURASI: Şamil Albayrak ismini silik bir yer tutucu yaptık
-        st.markdown("<p class='folder-label'>Sorumlu Uzman:</p>", unsafe_allow_html=True)
-        uzman_adi = st.text_input("", placeholder="Örn: Şamil Albayrak", label_visibility="collapsed")
-        
-        st.divider()
-        st.markdown("<p class='folder-label'>Mülakat Yapılan Aday:</p>", unsafe_allow_html=True)
-        st.text_input("", placeholder="Örn: Mehmet Can", label_visibility="collapsed")
-
-    st.button("➕ Yeni Klasör Oluştur", use_container_width=True)
-
-# --- ANA AKIŞ MANTIĞI ---
+# --- PANEL AKIŞI ---
 if 'mulakat_aktif' not in st.session_state:
     st.session_state.mulakat_aktif = False
 
 if not st.session_state.mulakat_aktif:
-    # 1. EKRAN: KURULUM (NLCortex Modu)
+    # --- KURULUM EKRANI (Önceki Adımlardaki Yapı) ---
     st.title("🚀 Oturum Yapılandırması")
-    st.write(f"Aktif Oturum: {uzman_adi if uzman_adi else 'Yeni Görüşme'}")
-
-    col_left, col_right = st.columns([1.5, 1])
-    
-    with col_left:
-        st.markdown('<div class="setup-card">', unsafe_allow_html=True)
-        
-        st.write("**⚙️ ADAPTİF ANALİZ SEGMENTİ**")
-        s1, s2, s3, s4, s5 = st.columns(5)
-        s1.button("15 sn")
-        s2.button("30 sn")
-        s3.button("1 dk")
-        s4.button("5 dk")
-        s5.button("10 dk")
-        
-        st.divider()
-        st.write("**🎙️ GİRİŞ KAYNAĞI**")
-        g1, g2 = st.columns(2)
-        g1.button("🎤 Mikrofon")
-        g2.button("🖥️ Sistem Sesi")
-        
-        st.divider()
-        if st.button("CANLI MÜLAKATI BAŞLAT →", use_container_width=True):
-            st.session_state.mulakat_aktif = True
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    col1, col2 = st.columns([1,1])
+    with col1:
+        segment = st.selectbox("Adaptif Analiz Aralığı", ["15 Saniye", "30 Saniye", "1 Dakika", "5 Dakika", "10 Dakika"])
+    if st.button("CANLI MÜLAKATI BAŞLAT"):
+        st.session_state.mulakat_aktif = True
+        st.session_state.segment_vakti = segment
+        st.rerun()
 
 else:
-    # 2. EKRAN: MÜLAKAT ODASI (SIRI MODU)
-    col_info, col_main, col_stats = st.columns([1, 2, 1])
+    # --- CANLI MÜLAKAT ODASI ---
+    col_info, col_main, col_stats = st.columns([0.8, 2, 1])
 
     with col_info:
         st.markdown("### 📋 Oturum")
-        st.caption(f"Uzman: {uzman_adi if uzman_adi else 'Tanımlanmadı'}")
-        st.divider()
-        if st.button("🛑 Oturumu Sonlandır"):
+        st.caption(f"Aralık: {st.session_state.segment_vakti}")
+        if st.button("🛑 Bitir"):
             st.session_state.mulakat_aktif = False
             st.rerun()
 
     with col_main:
-        st.markdown("<h2 style='text-align: center;'>Sistem Dinliyor...</h2>", unsafe_allow_html=True)
-        
-        # SIRI HALKASI
         st.markdown("<div class='siri-container'><div class='siri-sphere'></div></div>", unsafe_allow_html=True)
         
-        st.divider()
-        st.chat_message("assistant").write("Cevap bekleniyor... (Otomatik analiz 30sn sonra tetiklenecek)")
+        # SES KAYIT BİLEŞENİ (Canlı Dinleme)
+        st.write("🎙️ **Sistem Dinliyor ve Çeviriyor...**")
+        audio = mic_recorder(start_prompt="🎤 Dinlemeyi Başlat", stop_prompt="🛑 Duraklat", key='live_mic')
+        
+        # TRANSKRİPT ALANI
+        st.markdown("#### 🗨️ Canlı Transkript")
+        if audio:
+            # Not: Gerçek hayatta burada ses-metin dönüşümü yapılır. 
+            # Prototipte AI'ya ses verisinin geldiğini simüle ediyoruz.
+            st.session_state.last_speech = "Aday: 'Yapay zeka modellerini veri setleriyle eğitiyorum...'" # Simülasyon
+            
+        st.markdown(f"<div class='transcript-box'>{st.session_state.get('last_speech', 'Ses bekleniyor...')}</div>", unsafe_allow_html=True)
 
     with col_stats:
-        st.markdown("### ⚡ AI Öngörüleri")
-        st.metric("Duygu Kararlılığı", "%88")
-        st.info("💡 Adayın teknik terminoloji kullanımı yüksek. Bir sonraki soruda pratik uygulama detaylarını isteyin.")
+        st.markdown("### 🤖 Adaptif Analiz")
+        
+        # SİSTEMİN ADAPTİF TEPKİSİ
+        if audio:
+            with st.spinner('Segment Analiz Ediliyor...'):
+                # AI'dan Adaptif Soru İstiyoruz
+                prompt = f"Mülakatta aday şunu dedi: '{st.session_state.get('last_speech')}'. Seçilen segment: {st.session_state.segment_vakti}. Bu cevaba göre adayı zorlayacak tek bir adaptif soru ve bir mülakatçı önerisi yaz."
+                response = model.generate_content(prompt)
+                
+                st.success("🎯 Yeni Adaptif Soru")
+                st.write(response.text)
+                
+                # Radar Grafiği
+                fig = go.Figure(go.Scatterpolar(r=[80, 70, 90, 65], theta=['Hız','Odak','Teknik','Uyum'], fill='toself'))
+                fig.update_layout(height=250, margin=dict(l=20, r=20, t=20, b=20))
+                st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("İlk ses verisi geldiğinde adaptif öneriler burada belirecektir.")
