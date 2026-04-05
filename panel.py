@@ -4,8 +4,8 @@ from streamlit_mic_recorder import mic_recorder
 import plotly.graph_objects as go
 
 # --- AI AYARI ---
-API_KEY = "SENİN_ALDIĞIN_API_KEY" # Burayı güncellemeyi unutma!
-genai.configure(api_key=API_KEY)
+API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" # Burayı güncellemeyi unutma!
+genai.configure(AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY)
 model = genai.GenerativeModel('gemini-pro')
 
 st.set_page_config(page_title="Adaptive Hire | Voice AI", layout="wide")
