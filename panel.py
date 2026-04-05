@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 # --- AI AYARI ---
 API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" # Burayı güncellemeyi unutma!
-genai.configure(AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY)
+genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 
 st.set_page_config(page_title="Adaptive Hire | Voice AI", layout="wide")
