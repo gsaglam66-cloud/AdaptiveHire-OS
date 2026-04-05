@@ -1,9 +1,10 @@
 import streamlit as st
 import google.generativeai as genai
 import plotly.graph_objects as go
-from streamlit_components_lowlevel import components # Gizli bileşenler için
+import streamlit.components.v1 as components
 
 # --- AI AYARI ---
+# Kendi API anahtarını tırnak içine yapıştır
 API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-pro')
@@ -16,7 +17,7 @@ st.markdown("""
     .stSidebar { background-color: #f0f2f6; }
     .setup-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
     
-    /* Siri Halkası */
+    /* Siri Halkası Animasyonu */
     .siri-container { display: flex; justify-content: center; height: 100px; margin: 10px 0; }
     .siri-sphere {
         width: 70px; height: 70px; border-radius: 50%;
@@ -26,95 +27,63 @@ st.markdown("""
     }
     @keyframes siri-pulse { from { transform: scale(1); box-shadow: 0 0 20px #3a7bd5; } to { transform: scale(1.2); box-shadow: 0 0 40px #ff00c1; } }
     
-    /* Transkript Kutusu */
+    /* Transkript Kutusu Tasarımı */
     #transcript-display {
         background-color: #1e1e1e; color: #00ff00; padding: 15px;
         border-radius: 10px; font-family: 'Courier New', monospace;
-        height: 200px; overflow-y: auto; margin-top: 10px;
+        height: 250px; overflow-y: auto; margin-top: 10px;
+        line-height: 1.5; font-size: 14px;
     }
+    .folder-label { color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SOL PANEL (HİYERARŞİK ARŞİV) ---
+# --- SOL PANEL: HİYERARŞİK ARŞİV MANTIĞI ---
 with st.sidebar:
     st.markdown("### 📂 Kayıt Arşivi")
     with st.expander("🏢 Kurum Seçin...", expanded=True):
-        uzman = st.text_input("Sorumlu Uzman:", placeholder="Örn: Şamil Albayrak")
-        aday = st.text_input("Aday İsmi:", placeholder="Örn: Mehmet Can")
+        st.markdown("<p class='folder-label'>Sorumlu Uzman:</p>", unsafe_allow_html=True)
+        uzman = st.text_input("uzman_input", placeholder="Örn: Şamil Albayrak", label_visibility="collapsed")
+        
+        st.markdown("<p class='folder-label'>Aday İsmi:</p>", unsafe_allow_html=True)
+        aday = st.text_input("aday_input", placeholder="Örn: Mehmet Can", label_visibility="collapsed")
+    
     st.divider()
-    st.info("💡 İpucu: Segment süresi sonunda AI otomatik soru üretecektir.")
+    st.button("➕ Yeni Klasör Oluştur", use_container_width=True)
 
-# --- ANA AKIŞ ---
+# --- ANA AKIŞ KONTROLÜ ---
 if 'mulakat_aktif' not in st.session_state:
     st.session_state.mulakat_aktif = False
 
 if not st.session_state.mulakat_aktif:
-    # 1. EKRAN: KURULUM
+    # --- 1. EKRAN: KURULUM (SETUP) ---
     st.title("🚀 Oturum Yapılandırması")
     col_l, col_r = st.columns([1.5, 1])
     
     with col_l:
         st.markdown('<div class="setup-card">', unsafe_allow_html=True)
-        st.write("**⏱️ ADAPTİF ANALİZ SEGMENTİ**")
-        segment_sure = st.select_slider("Saniye cinsinden seçin:", options=[15, 30, 60, 300, 600])
+        st.write("**⏱️ ADAPTİF ANALİZ SEGMENTİ (SÜRE)**")
+        segment_sure = st.select_slider("Analiz periyodu seçin:", options=["15 sn", "30 sn", "1 dk", "2 dk", "5 dk", "10 dk"])
+        
+        st.divider()
+        st.write("**🎙️ GİRİŞ KAYNAĞI**")
+        g1, g2 = st.columns(2)
+        g1.button("🎤 Sadece Mikrofon", use_container_width=True)
+        g2.button("🖥️ Sistem Sesi", use_container_width=True)
         
         st.divider()
         if st.button("CANLI MÜLAKATI BAŞLAT →", use_container_width=True):
             st.session_state.mulakat_aktif = True
+            st.session_state.current_segment = segment_sure
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col_r:
+        st.info("Ayarları tamamlayıp 'Başlat' butonuna bastığınızda mülakat odası aktifleşecektir.")
+        st.image("https://cdn-icons-png.flaticon.com/512/3649/3649460.png", width=150)
+
 else:
-    # 2. EKRAN: CANLI MÜLAKAT ODASI
-    st.header(f"🎙️ Canlı Görüşme: {aday if aday else 'Yeni Aday'}")
+    # --- 2. EKRAN: CANLI MÜLAKAT ODASI ---
+    st.header(f"🎙️ Görüşme: {aday if aday else 'Yeni Aday'}")
     
-    c1, c2, c3 = st.columns([1, 2, 1])
-    
-    with c1:
-        st.write("**Oturum Verileri**")
-        st.metric("Segment", f"{segment_sure} sn")
-        if st.button("🛑 Oturumu Bitir"):
-            st.session_state.mulakat_aktif = False
-            st.rerun()
-
-    with c2:
-        # SIRI HALKASI
-        st.markdown("<div class='siri-container'><div class='siri-sphere'></div></div>", unsafe_allow_html=True)
-        
-        # --- JAVASCRIPT TABANLI ANLIK TRANSKRIPT ---
-        st.write("**🗨️ Anlık Transkript (Live)**")
-        
-        # Bu kısım tarayıcının mikrofonunu kullanır ve anında ekrana yazar
-        st.components.v1.html("""
-            <div id="transcript-display">Ses bekleniyor... Dinlemeye başlamak için tarayıcı izni verin.</div>
-            <script>
-                const display = document.getElementById('transcript-display');
-                const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (Recognition) {
-                    const rec = new Recognition();
-                    rec.lang = 'tr-TR';
-                    rec.continuous = True;
-                    rec.interimResults = True;
-                    
-                    rec.onresult = (event) => {
-                        let text = '';
-                        for (let i = event.resultIndex; i < event.results.length; i++) {
-                            text += event.results[i][0].transcript;
-                        }
-                        display.innerText = text;
-                    };
-                    rec.start();
-                } else {
-                    display.innerText = "Tarayıcı desteklenmiyor.";
-                }
-            </script>
-        """, height=250)
-
-    with c3:
-        st.write("**🤖 AI Analiz Paneli**")
-        # Burada AI'nın periyodik önerileri belirecek
-        st.warning("⚠️ Adaptif Öneri: Adayın son cümlesindeki liderlik vurgusunu derinleştirin.")
-        
-        # Radar Grafik
-        fig = go.Figure(go.Scatterpolar(r=[70, 80, 60, 90], theta=['Hız','Güven','Teknik','Akıcılık'], fill='toself'))
-        fig.update_layout(height=200, margin=dict(l=10, r=10, t=10, b=10))
-        st.plotly_chart(fig, use_container_width=True)
+    c1, c2, c3 = st.columns([0.8, 2
