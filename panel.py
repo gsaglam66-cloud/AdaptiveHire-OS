@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from streamlit_components_lowlevel import components # Gizli bileşenler için
 
 # --- AI AYARI ---
-API_KEY = "SENİN_API_KEYİN" 
+API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 
