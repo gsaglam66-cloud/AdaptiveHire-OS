@@ -4,106 +4,185 @@ import plotly.graph_objects as go
 import streamlit.components.v1 as components
 
 # --- AI AYARI ---
-API_KEY = "BURAYA_API_ANAHTARINI_YAZ" 
+API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 
-st.set_page_config(page_title="Adaptive Hire OS", layout="wide", initial_sidebar_state="expanded")
+# Sayfa Genişlik ve Tema Ayarı
+st.set_page_config(page_title="NLC - Neo Limbic Cortex", layout="wide", initial_sidebar_state="expanded")
 
-# --- TASARIM VE SIRI ANIMASYONU ---
+# --- GELİŞMİŞ KURUMSAL CSS (Görseldeki Tasarım) ---
 st.markdown("""
     <style>
-    .stSidebar { background-color: #f0f2f6; }
-    .setup-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-    .siri-container { display: flex; justify-content: center; height: 100px; margin: 10px 0; }
-    .siri-sphere {
-        width: 70px; height: 70px; border-radius: 50%;
-        background: linear-gradient(45deg, #00d2ff, #3a7bd5, #ff00c1, #9d50bb);
-        background-size: 400% 400%;
-        animation: siri-pulse 2s infinite ease-in-out alternate;
+    /* Ana Arka Plan */
+    .stApp { background-color: #f8f9fa; }
+    
+    /* Sol Sidebar Tasarımı */
+    [data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e0e0e0; min-width: 350px !important; }
+    
+    /* Kurumsal Kart Yapısı (Setup Card) */
+    .setup-card {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        border: 1px solid #e6e9ef;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.02);
     }
-    @keyframes siri-pulse { from { transform: scale(1); box-shadow: 0 0 20px #3a7bd5; } to { transform: scale(1.2); box-shadow: 0 0 40px #ff00c1; } }
+
+    /* Sol Panel Görüşme Kartları */
+    .interview-card {
+        background-color: #fff9db; /* Görseldeki sarımtırak ton */
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #ffe066;
+        margin-bottom: 10px;
+        cursor: pointer;
+    }
+    
+    /* Buton Tasarımları */
+    .stButton>button { border-radius: 8px; border: 1px solid #dcdfe6; background: white; transition: 0.3s; }
+    .stButton>button:hover { border-color: #409eff; color: #409eff; }
+    
+    /* Başlat Butonu (Mavi) */
+    .main-btn button {
+        background-color: #2563eb !important;
+        color: white !important;
+        width: 100%;
+        font-weight: bold;
+        height: 50px;
+    }
+
+    /* Transkript Kutusu (Siyah Ekran) */
     #transcript-display {
-        background-color: #1e1e1e; color: #00ff00; padding: 15px;
-        border-radius: 10px; font-family: 'Courier New', monospace;
-        height: 250px; overflow-y: auto; margin-top: 10px;
+        background-color: #ffffff; color: #333; padding: 20px;
+        border-radius: 12px; border: 1px solid #e0e0e0;
+        height: 400px; overflow-y: auto; font-size: 15px;
     }
-    .folder-label { color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SOL PANEL ---
+# --- SOL SIDEBAR (Görseldeki Navigasyon) ---
 with st.sidebar:
-    st.markdown("### 📂 Kayıt Arşivi")
-    with st.expander("🏢 Kurum Seçin...", expanded=True):
-        st.markdown("<p class='folder-label'>Sorumlu Uzman:</p>", unsafe_allow_html=True)
-        uzman = st.text_input("uzman_id", placeholder="Örn: Şamil Albayrak", label_visibility="collapsed")
-        st.markdown("<p class='folder-label'>Aday İsmi:</p>", unsafe_allow_html=True)
-        aday = st.text_input("aday_id", placeholder="Örn: Mehmet Can", label_visibility="collapsed")
+    st.title("Danışan Görüşmeleri")
+    
+    # Profil Kartı
+    st.markdown(f"""
+    <div style="background: #f1f3f5; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+        <p style="margin:0; font-size: 12px; color: #666;">📁 IK Görüşmeleri Profili</p>
+        <h4 style="margin:5px 0;">Örn: Şamil ALBAYRAK</h4>
+        <p style="margin:0; font-size: 11px; color: #888;">Görüşme Sayısı: 8</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.text_input("🔍 Görüşme ara...", placeholder="Aday veya tarih yazın")
+    
+    col_btn1, col_btn2 = st.columns(2)
+    col_btn1.button("Kayıt Tarihi", use_container_width=True)
+    col_btn2.button("Son Güncelleme", use_container_width=True)
+    
+    st.button("➕ Yeni Görüşme Aç", use_container_width=True, type="primary")
+    
     st.divider()
-    st.button("➕ Yeni Klasör Oluştur", use_container_width=True)
+    
+    # Geçmiş Görüşme Kartları (Görseldeki Sarı Kartlar)
+    for i in range(9, 6, -1):
+        st.markdown(f"""
+        <div class="interview-card">
+            <div style="display: flex; justify-content: space-between;">
+                <strong>Görüşme {i}</strong>
+                <span style="font-size: 10px; color: #888;">00:44</span>
+            </div>
+            <p style="font-size: 11px; color: #666; margin: 5px 0;">IK Görüşmeleri Profili<br>Alan Becerisi Uzmanı v8</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-# --- ANA AKIŞ ---
+# --- ANA EKRAN AKIŞI ---
 if 'mulakat_aktif' not in st.session_state:
     st.session_state.mulakat_aktif = False
 
 if not st.session_state.mulakat_aktif:
-    st.title("🚀 Oturum Yapılandırması")
-    col_l, col_r = st.columns([1.5, 1])
-    with col_l:
+    # --- GÖRSELDEKİ SETUP EKRANI ---
+    st.subheader("Görüşme 9")
+    
+    col_setup, col_preview = st.columns([1.2, 1])
+    
+    with col_setup:
         st.markdown('<div class="setup-card">', unsafe_allow_html=True)
-        st.write("**⏱️ ADAPTİF ANALİZ SEGMENTİ**")
-        segment_sure = st.select_slider("Periyot seçin:", options=["15 sn", "30 sn", "1 dk", "2 dk", "5 dk", "10 dk"])
+        st.subheader("Oturum Ayarları")
+        st.caption("Başlamadan önce tercihlerinizi seçin")
+        
+        st.write("**GÖRÜNÜM MODU**")
+        m1, m2, m3 = st.columns(3)
+        m1.button("💬 Chat", use_container_width=True)
+        m2.button("♾️ Otonom", use_container_width=True)
+        m3.button("🖥️ Sunum", use_container_width=True)
+        
+        st.write("**GİRİŞ KAYNAĞI**")
+        g1, g2 = st.columns(2)
+        g1.button("🎤 Sadece Mikrofon", use_container_width=True)
+        g2.button("🖥️ Sistem Sesi", use_container_width=True)
+        
+        st.write("**⏱️ SEGMENT SÜRESİ**")
+        seg_options = ["15 sn", "20 sn", "30 sn", "1 dk", "2 dk", "5 dk", "10 dk"]
+        selected_seg = st.select_slider("", options=seg_options, value="30 sn", label_visibility="collapsed")
+        
         st.divider()
-        if st.button("CANLI MÜLAKATI BAŞLAT →", use_container_width=True):
+        st.markdown('<div class="main-btn">', unsafe_allow_html=True)
+        if st.button("Başla →"):
             st.session_state.mulakat_aktif = True
-            st.session_state.current_segment = segment_sure
+            st.session_state.seg = selected_seg
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-else:
-    st.header(f"🎙️ Görüşme: {aday if aday else 'Yeni Aday'}")
-    
-    # İŞTE BURASI DÜZELTİLDİ (89. SATIR)
-    c1, c2, c3 = st.columns([0.8, 2, 1])
-    
-    with c1:
-        st.metric("Sorumlu", uzman if uzman else "Belirtilmedi")
-        st.metric("Aralık", st.session_state.current_segment)
-        if st.button("🛑 Oturumu Bitir"):
-            st.session_state.mulakat_aktif = False
-            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    with c2:
-        st.markdown("<div class='siri-container'><div class='siri-sphere'></div></div>", unsafe_allow_html=True)
-        st.write("**🗨️ Canlı Transkript**")
+    with col_preview:
+        st.write("**ÖNİZLEME**")
+        st.image("https://cdn-icons-png.flaticon.com/512/2593/2593491.png", width=60)
+        st.caption("Standart sohbet görünümü aktif.")
+        st.info("Mülakat başladığında analizler burada akacaktır.")
+
+else:
+    # --- CANLI MÜLAKAT ODASI (SIRI VE TRANSKRIPT) ---
+    st.header(f"🎙️ Görüşme Modu Aktif")
+    
+    c_side, c_mid, c_stat = st.columns([0.7, 2, 1])
+    
+    with c_side:
+        st.button("🔙 Ayarlara Dön", on_click=lambda: st.session_state.update({"mulakat_aktif": False}))
+        st.metric("Seçilen Segment", st.session_state.seg)
+
+    with c_mid:
+        # Siri Animasyonu
+        st.markdown("""
+        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+            <div class="siri-sphere" style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(45deg, #00d2ff, #ff00c1); animation: pulse 2s infinite alternate;"></div>
+        </div>
+        <style>@keyframes pulse { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.2); opacity: 1; } }</style>
+        """, unsafe_allow_html=True)
+        
+        # ANLIK TRANSKRIPT (JavaScript)
         components.html("""
-            <div id="transcript-display">Dinleme bekleniyor...</div>
+            <div id="transcript-display" style="background:#fff; border:1px solid #eee; padding:20px; border-radius:12px; height:350px; overflow-y:auto; font-family:sans-serif;">Dinleme bekleniyor...</div>
             <script>
                 const display = document.getElementById('transcript-display');
                 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (Recognition) {
                     const rec = new Recognition();
-                    rec.lang = 'tr-TR';
-                    rec.continuous = true;
-                    rec.interimResults = true;
-                    rec.onresult = (event) => {
-                        let text = '';
-                        for (let i = 0; i < event.results.length; i++) {
-                            text += event.results[i][0].transcript + ' ';
-                        }
-                        display.innerText = text;
+                    rec.lang = 'tr-TR'; rec.continuous = true; rec.interimResults = true;
+                    rec.onresult = (e) => {
+                        let t = '';
+                        for (let i = 0; i < e.results.length; i++) { t += e.results[i][0].transcript + ' '; }
+                        display.innerText = t;
                     };
                     rec.start();
-                    rec.onend = () => rec.start();
-                } else {
-                    display.innerText = "Desteklenmiyor.";
                 }
             </script>
-        """, height=280)
+        """, height=400)
 
-    with c3:
-        st.write("**🤖 AI Analiz**")
-        st.warning("💡 Öneri: Adayın son cevabını analiz edin.")
-        fig = go.Figure(go.Scatterpolar(r=[75, 85, 70, 90], theta=['Hız','Güven','Teknik','Uyum'], fill='toself'))
-        fig.update_layout(height=250, margin=dict(l=10, r=10, t=10, b=10), paper_bgcolor='rgba(0,0,0,0)')
+    with c_stat:
+        st.write("**🤖 AI Önerileri**")
+        st.warning("💡 Adayın akıcılığı %85. Teknik sorulara geçebilirsiniz.")
+        # Küçük Radar Grafiği
+        fig = go.Figure(go.Scatterpolar(r=[80, 70, 90, 60], theta=['Hız','Güven','Teknik','Uyum'], fill='toself'))
+        fig.update_layout(height=250, margin=dict(l=0,r=0,t=0,b=0), paper_bgcolor='rgba(0,0,0,0)')
         st.plotly_chart(fig, use_container_width=True)
