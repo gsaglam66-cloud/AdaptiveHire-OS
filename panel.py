@@ -1,39 +1,38 @@
 import streamlit as st
+import google.generativeai as genai
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="Adaptive Hire | Operasyon", layout="wide")
+# --- AI AYARI (Buraya Kendi API Anahtarını Yapıştır) ---
+API_KEY = "BURAYA_ALDIĞIN_API_KEYİ_YAPIŞTIR"
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel('gemini-pro')
 
-# Üst Panel (Bakiye ve Durum)
-st.title("🛠️ İK Operasyon Merkezi")
-c1, c2 = st.columns(2)
-c1.metric("Kalan Kullanım Kredisi", "2,450 Seans")
-c2.info("💰 **Sistem Notu:** Birim Satış: $3.00 | Üretim Maliyeti: $0.25")
+st.set_page_config(page_title="Adaptive Hire | AI Core", layout="wide")
 
-st.divider()
+st.title("🧠 AI Destekli Aday Analiz Merkezi")
 
-# Mülakat Alanı
-st.subheader("🎙️ Canlı Aday Değerlendirme")
-col_sol, col_sag = st.columns([2, 1])
+# Kullanıcı Girişi (Adayın Cevabı)
+aday_cevabi = st.text_area("Adayın Cevabını Buraya Yapıştırın:", placeholder="Örn: Projelerimde önce planlama yaparım, sonra ekip koordinasyonuna odaklanırım...")
 
-with col_sol:
-    st.markdown("**Sistem Tarafından Üretilen Stratejik Soru:**")
-    st.warning("Teknik projelerinizde hız ve kalite arasındaki dengeyi nasıl kuruyorsunuz?")
-    
-    # İK Süper Güç Butonları
-    st.write("---")
-    if st.button("✅ Analizi Onayla ve Raporla ($3.00)"):
-        st.success("Analiz tamamlandı. Aday DNA'sı sisteme işlendi.")
-        st.balloons()
-        
-    if st.button("🗑️ Hatalı Analizi Sil (Kredi İade Et)"):
-        st.error("Kayıt imha edildi. 1 Kredi hesabınıza geri yüklendi.")
-
-with col_sag:
-    st.write("**Aday Yetkinlik Radarı**")
-    # Radar Grafiği (Görsel Zenginlik)
-    fig = go.Figure(go.Scatterpolar(
-      r=[80, 90, 70, 85],
-      theta=['Hız','Disiplin','Odak','Teknik'],
-      fill='toself'
-    ))
-    st.plotly_chart(fig, use_container_width=True)
+if st.button("🚀 AI Analizini Başlat"):
+    if aday_cevabi:
+        with st.spinner('Yapay Zeka Adayı İnceliyor...'):
+            # AI'ya gönderdiğimiz gizli talimat (Prompt Engineering)
+            prompt = f"Bir İK uzmanı gibi davran. Şu aday cevabını analiz et: '{aday_cevabi}'. Analiz sonucunda adaya Hız, Disiplin, Odak ve Teknik becerileri için 0-100 arası puan ver ve kısa bir yorum yap. Format: Hız:X, Disiplin:X, Odak:X, Teknik:X"
+            
+            response = model.generate_content(prompt)
+            st.success("Analiz Tamamlandı!")
+            
+            # Sonuçları Göster
+            st.markdown(f"### 📋 AI Değerlendirmesi")
+            st.write(response.text)
+            
+            # Radar Grafiği için Örnek Veri (Burayı daha sonra otomatik parse edeceğiz)
+            fig = go.Figure(go.Scatterpolar(
+              r=[85, 70, 90, 65], # Bu rakamlar AI'dan gelen verilere göre değişecek
+              theta=['Hız','Disiplin','Odak','Teknik'],
+              fill='toself'
+            ))
+            st.plotly_chart(fig)
+    else:
+        st.warning("Lütfen önce bir aday cevabı girin.")
