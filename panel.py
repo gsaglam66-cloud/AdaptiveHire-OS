@@ -1,38 +1,62 @@
 import streamlit as st
 import google.generativeai as genai
+from streamlit_mic_recorder import mic_recorder
 import plotly.graph_objects as go
 
-# --- AI AYARI (AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY) ---
-API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY"
+# --- AI AYARI ---
+API_KEY = "SENİN_ALDIĞIN_API_KEY" # Burayı güncellemeyi unutma!
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 
-st.set_page_config(page_title="Adaptive Hire | AI Core", layout="wide")
+st.set_page_config(page_title="Adaptive Hire | Voice AI", layout="wide")
 
-st.title("🧠 AI Destekli Aday Analiz Merkezi")
+st.title("🎙️ AI Sesli Analiz ve Çoklu Dil Paneli")
 
-# Kullanıcı Girişi (Adayın Cevabı)
-aday_cevabi = st.text_area("Adayın Cevabını Buraya Yapıştırın:", placeholder="Örn: Projelerimde önce planlama yaparım, sonra ekip koordinasyonuna odaklanırım...")
+col_sol, col_sag = st.columns([1, 1])
 
-if st.button("🚀 AI Analizini Başlat"):
-    if aday_cevabi:
-        with st.spinner('Yapay Zeka Adayı İnceliyor...'):
-            # AI'ya gönderdiğimiz gizli talimat (Prompt Engineering)
-            prompt = f"Bir İK uzmanı gibi davran. Şu aday cevabını analiz et: '{aday_cevabi}'. Analiz sonucunda adaya Hız, Disiplin, Odak ve Teknik becerileri için 0-100 arası puan ver ve kısa bir yorum yap. Format: Hız:X, Disiplin:X, Odak:X, Teknik:X"
+with col_sol:
+    st.subheader("Adayı Dinle")
+    st.write("Mikrofona tıkla ve adayın cevabını kaydet (Her dilde konuşabilir):")
+    
+    # Mikrofon Bileşeni
+    audio = mic_recorder(start_prompt="🎤 Kaydı Başlat", stop_prompt="🛑 Kaydı Bitir", key='recorder')
+
+if audio:
+    # Burada normalde bir ses-metin servisi (Whisper vb.) kullanılır. 
+    # Şimdilik entegrasyonu basitleştirmek için AI'ya ham metin analizi yaptırıyoruz.
+    st.audio(audio['bytes'])
+    st.success("Ses kaydı başarıyla alındı!")
+
+# Manuel Giriş veya Ses Analiz Alanı
+aday_metni = st.text_area("Analiz Edilecek Metin (Veya yukarıdaki sesi buraya yazın):")
+
+if st.button("🚀 Derinlemesine AI Analizi Yap"):
+    if aday_metni:
+        with st.spinner('Yapay Zeka Çoklu Dil ve Karakter Analizi Yapıyor...'):
+            # AI Talimatı: Dil ne olursa olsun Türkçe analiz etmesini istiyoruz
+            prompt = f"""
+            Aşağıdaki metni bir İK uzmanı gibi analiz et. 
+            Metin hangi dilde olursa olsun sonucu Türkçe ver.
+            Metin: '{aday_metni}'
+            
+            Lütfen şu formatta cevap ver:
+            1. Genel Özet
+            2. Güçlü Yönler
+            3. Gelişim Alanları
+            4. Puanlama (0-100): Hız, Disiplin, Teknik, Uyum
+            """
             
             response = model.generate_content(prompt)
-            st.success("Analiz Tamamlandı!")
+            st.markdown("### 📊 Stratejik Analiz Raporu")
+            st.info(response.text)
             
-            # Sonuçları Göster
-            st.markdown(f"### 📋 AI Değerlendirmesi")
-            st.write(response.text)
-            
-            # Radar Grafiği için Örnek Veri (Burayı daha sonra otomatik parse edeceğiz)
+            # Radar Grafiği
             fig = go.Figure(go.Scatterpolar(
-              r=[85, 70, 90, 65], # Bu rakamlar AI'dan gelen verilere göre değişecek
-              theta=['Hız','Disiplin','Odak','Teknik'],
-              fill='toself'
+                r=[80, 75, 90, 85], # Burası AI yanıtından çekilebilir
+                theta=['Hız','Disiplin','Teknik','Uyum'],
+                fill='toself',
+                line_color='#0071e3'
             ))
             st.plotly_chart(fig)
     else:
-        st.warning("Lütfen önce bir aday cevabı girin.")
+        st.warning("Lütfen bir metin girin veya ses kaydı yapın.")
