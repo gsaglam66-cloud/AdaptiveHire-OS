@@ -1,84 +1,103 @@
 import streamlit as st
-import google.generativeai as genai
-from streamlit_mic_recorder import mic_recorder
-import plotly.graph_objects as go
 
-# --- AI AYARI ---
-API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" 
-genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-pro')
+# Sayfa Yapısı
+st.set_page_config(page_title="NLC Cortex | Adaptive Hire", layout="wide", initial_sidebar_state="expanded")
 
-st.set_page_config(page_title="Adaptive Hire | Real-Time AI", layout="wide")
-
-# --- CSS: Butonları ve Arayüzü Özelleştir ---
+# --- NLC STYLE CSS ---
 st.markdown("""
     <style>
-    .stButton>button { width: 100%; border-radius: 10px; height: 3em; font-weight: bold; }
-    .critical-btn>button { background-color: #ff4b4b; color: white; border: none; }
-    .analysis-box { background-color: #1e1e1e; padding: 20px; border-radius: 10px; border-left: 5px solid #0071e3; }
+    /* Sol Menü (Past Interviews) */
+    .stSidebar { background-color: #f8f9fa; border-right: 1px solid #dee2e6; }
+    
+    /* Ana Kart Tasarımı */
+    .setup-card {
+        background-color: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border: 1px solid #e9ecef;
+    }
+    
+    /* Segment Butonları Tasarımı */
+    div.stButton > button {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        background-color: white;
+        transition: 0.2s;
+    }
+    div.stButton > button:hover { border-color: #0071e3; color: #0071e3; }
+    
+    /* Başlat Butonu (Mavi) */
+    .main-btn > div > button {
+        background-color: #0071e3 !important;
+        color: white !important;
+        width: 100%;
+        padding: 15px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🧠 Canlı Adaptif Mülakat Asistanı")
-
-# Üst Panel: Kontrol Mekanizması
-col_ctrl1, col_ctrl2, col_ctrl3 = st.columns([1, 2, 1])
-
-with col_ctrl1:
-    st.subheader("⏱️ Otomatik Analiz Aralığı")
-    periyot = st.selectbox("Sistem ne sıklıkla araya girsin?", 
-                          ["15 Saniye", "30 Saniye", "1 Dakika", "2 Dakika", "5 Dakika"])
-
-with col_ctrl2:
-    st.subheader("🎙️ Canlı Dinleme")
-    # Kayıt cihazı sürekli açık kalabilir
-    audio = mic_recorder(start_prompt="🎤 Mülakatı Başlat (Dinlemeye Geç)", 
-                         stop_prompt="🛑 Mülakatı Bitir", key='live_recorder')
-
-with col_ctrl3:
-    st.subheader("🚨 Manuel Komut")
-    st.write("Kritik bir detay mı yakaladınız?")
-    if st.button("🎯 ANLIK ANALİZ İSTE", help="Periyodu beklemeden son konuşmayı analiz eder."):
-        st.session_state.force_analyze = True
-
-# --- ANALİZ VE AKIŞ MANTIĞI ---
-if audio or st.session_state.get('force_analyze', False):
+# --- SOL MENÜ (Görüşme Geçmişi) ---
+with st.sidebar:
+    st.subheader("📁 Danışan Görüşmeleri")
+    st.info("👤 Şamil ALBAYRAK\n\nKayıt Tarihi: 08.12.2025")
+    st.button("➕ Yeni Görüşme Aç", use_container_width=True)
     st.divider()
-    c1, c2 = st.columns([2, 1])
     
-    with c1:
-        st.markdown("<div class='analysis-box'>", unsafe_allow_html=True)
-        with st.spinner(f'Yapay Zeka {periyot} aralığını veya manuel komutu işliyor...'):
-            # Buradaki prompt, sistemin "asistan" rolünü pekiştirir
-            prompt = f"""
-            Şu an canlı bir mülakatın içerisindesin. 
-            Mülakatçının seçtiği analiz aralığı: {periyot}.
-            Gelen son konuşma verilerini analiz et:
-            1. Adayın son cümlesindeki satır arası mesajları yakala.
-            2. Mülakatçıya aday hakkında gizli bir ipucu ver (Örn: 'Aday teknik konuda özgüvenli ama ekip çalışmasında tereddütlü görünüyor').
-            3. Derhal mülakatçının sorabileceği, adayı 'köşeye sıkıştıracak' veya 'derine inecek' yeni bir soru üret.
-            Analizi profesyonel Türkçe ile yap.
-            """
-            
-            # Simüle edilmiş yanıt (API'den gelecek)
-            try:
-                response = model.generate_content(prompt)
-                st.write("### 🤖 AI Asistan Notu & Yeni Soru")
-                st.info(response.text)
-            except:
-                st.error("API bağlantısı kontrol edilmeli.")
-        st.markdown("</div>", unsafe_allow_html=True)
+    # Geçmiş Görüşme Listesi
+    for i in range(9, 5, -1):
+        with st.expander(f"📌 Görüşme {i}"):
+            st.write("IK Görüşmeleri Profili")
+            st.caption("Gelişmiş Tarama Uzmanı v2")
 
-    with c2:
-        st.write("📊 **Anlık Yetkinlik Skoru**")
-        fig = go.Figure(go.Scatterpolar(
-            r=[65, 80, 55, 70], 
-            theta=['Dürüstlük','Teknik','Stres Yönetimi','Uyum'],
-            fill='toself'
-        ))
-        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
-        st.plotly_chart(fig, use_container_width=True)
+# --- ANA EKRAN (Oturum Ayarları) ---
+st.header(f"Görüşme 9")
 
-    # Manuel komut bayrağını sıfırla
-    if st.session_state.get('force_analyze'):
-        st.session_state.force_analyze = False
+col_main, col_preview = st.columns([1.5, 1])
+
+with col_main:
+    st.markdown('<div class="setup-card">', unsafe_allow_html=True)
+    st.subheader("Oturum Ayarları")
+    st.caption("Başlamadan önce tercihlerinizi seçin")
+    
+    # 1. Görünüm Modu
+    st.write("**GÖRÜNÜM MODU**")
+    m1, m2, m3 = st.columns(3)
+    m1.button("💬 Chat", use_container_width=True)
+    m2.button("♾️ Otonom", use_container_width=True)
+    m3.button("🖥️ Sunum", use_container_width=True)
+    
+    # 2. Giriş Kaynağı
+    st.write("**GİRİŞ KAYNAĞI**")
+    g1, g2 = st.columns(2)
+    g1.button("🎤 Sadece Mikrofon", use_container_width=True)
+    g2.button("📠 Mikrofon + Tab Sesi", use_container_width=True)
+    
+    g3, g4 = st.columns(2)
+    g3.button("🖥️ Mikrofon + Sistem", use_container_width=True)
+    g4.button("🤖 Toplantı Botu", use_container_width=True)
+    
+    # 3. Segment Süresi
+    st.write("**⏱️ SEGMENT SÜRESİ**")
+    st.caption("Ses kaydı bu süre dolduğunda otomatik olarak analiz edilip AI'ya gönderilir.")
+    seg1, seg2, seg3, seg4, seg5 = st.columns(5)
+    seg1.button("15 sn")
+    seg2.button("20 sn")
+    seg3.button("30 sn")
+    seg4.button("1 dk")
+    seg5.button("2 dk")
+    
+    st.divider()
+    st.markdown('<div class="main-btn">', unsafe_allow_html=True)
+    if st.button("Başla →"):
+        st.switch_page("panel.py") # Buraya mülakatın başladığı sayfayı bağlayabiliriz
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with col_preview:
+    st.write("**ÖNİZLEME**")
+    st.image("https://cdn-icons-png.flaticon.com/512/2593/2593491.png", width=100)
+    st.caption("Standart sohbet görünümü aktif.")
+    # Sohbet simülasyonu
+    st.chat_message("assistant").write("Merhaba, analiz için hazırım.")
+    st.chat_message("user").write("...")
