@@ -2,63 +2,83 @@ import streamlit as st
 import google.generativeai as genai
 from streamlit_mic_recorder import mic_recorder
 import plotly.graph_objects as go
-import time
 
 # --- AI AYARI ---
 API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 
-st.set_page_config(page_title="Adaptive Hire | Auto-Flow AI", layout="wide")
+st.set_page_config(page_title="Adaptive Hire | Real-Time AI", layout="wide")
 
-st.title("🧠 Adaptif Otomatik Mülakat Sistemi")
+# --- CSS: Butonları ve Arayüzü Özelleştir ---
+st.markdown("""
+    <style>
+    .stButton>button { width: 100%; border-radius: 10px; height: 3em; font-weight: bold; }
+    .critical-btn>button { background-color: #ff4b4b; color: white; border: none; }
+    .analysis-box { background-color: #1e1e1e; padding: 20px; border-radius: 10px; border-left: 5px solid #0071e3; }
+    </style>
+    """, unsafe_allow_html=True)
 
-# --- SÜRE SEÇİM SEKMELERİ ---
-st.subheader("⏱️ Mülakat Süresini Belirleyin")
-sure_secenekleri = {"15 Saniye": 15, "30 Saniye": 30, "1 Dakika": 60, "2 Dakika": 120, "5 Dakika": 300}
-secilen_sure_etiket = st.select_slider("Konuşma Süresi Limitini Seçin:", options=list(sure_secenekleri.keys()))
-limit_saniye = sure_secenekleri[secilen_sure_etiket]
+st.title("🧠 Canlı Adaptif Mülakat Asistanı")
 
-col1, col2 = st.columns([1, 1])
+# Üst Panel: Kontrol Mekanizması
+col_ctrl1, col_ctrl2, col_ctrl3 = st.columns([1, 2, 1])
 
-with col1:
-    st.info(f"Seçilen Limit: {secilen_sure_etiket}. Süre bitiminde AI otomatik analize geçecektir.")
+with col_ctrl1:
+    st.subheader("⏱️ Otomatik Analiz Aralığı")
+    periyot = st.selectbox("Sistem ne sıklıkla araya girsin?", 
+                          ["15 Saniye", "30 Saniye", "1 Dakika", "2 Dakika", "5 Dakika"])
+
+with col_ctrl2:
+    st.subheader("🎙️ Canlı Dinleme")
+    # Kayıt cihazı sürekli açık kalabilir
+    audio = mic_recorder(start_prompt="🎤 Mülakatı Başlat (Dinlemeye Geç)", 
+                         stop_prompt="🛑 Mülakatı Bitir", key='live_recorder')
+
+with col_ctrl3:
+    st.subheader("🚨 Manuel Komut")
+    st.write("Kritik bir detay mı yakaladınız?")
+    if st.button("🎯 ANLIK ANALİZ İSTE", help="Periyodu beklemeden son konuşmayı analiz eder."):
+        st.session_state.force_analyze = True
+
+# --- ANALİZ VE AKIŞ MANTIĞI ---
+if audio or st.session_state.get('force_analyze', False):
+    st.divider()
+    c1, c2 = st.columns([2, 1])
     
-    # Mikrofon Kaydı
-    # Not: mic_recorder kütüphanesi manuel durdurma ister ancak biz ekran zamanlayıcısı ile kullanıcıyı yönlendireceğiz.
-    audio = mic_recorder(start_prompt="🎤 Mülakatı Başlat", stop_prompt="🛑 Kaydı Durdur (Manuel)", key='recorder')
-
-    if audio:
-        st.audio(audio['bytes'])
-        st.success("Ses verisi işleniyor...")
-
-with col2:
-    if audio:
-        with st.spinner('⏳ Süre doldu! Yapay Zeka cevabı analiz ediyor ve yeni soru üretiyor...'):
-            # AI'ya gönderilen gelişmiş talimat
+    with c1:
+        st.markdown("<div class='analysis-box'>", unsafe_allow_html=True)
+        with st.spinner(f'Yapay Zeka {periyot} aralığını veya manuel komutu işliyor...'):
+            # Buradaki prompt, sistemin "asistan" rolünü pekiştirir
             prompt = f"""
-            Bir profesyonel mülakatçı gibi davran. Adayın son cevabını analiz et (Metin: 'Adayın konuşması simüle ediliyor').
-            1. Adayın cevabının derinliğini ölç (0-100).
-            2. Bu cevaba dayanarak, adayı daha da zorlayacak veya detaya itecek 'ADAPTİF' bir takip sorusu üret.
-            3. Analizi ve yeni soruyu Türkçe olarak sun.
+            Şu an canlı bir mülakatın içerisindesin. 
+            Mülakatçının seçtiği analiz aralığı: {periyot}.
+            Gelen son konuşma verilerini analiz et:
+            1. Adayın son cümlesindeki satır arası mesajları yakala.
+            2. Mülakatçıya aday hakkında gizli bir ipucu ver (Örn: 'Aday teknik konuda özgüvenli ama ekip çalışmasında tereddütlü görünüyor').
+            3. Derhal mülakatçının sorabileceği, adayı 'köşeye sıkıştıracak' veya 'derine inecek' yeni bir soru üret.
+            Analizi profesyonel Türkçe ile yap.
             """
             
-            response = model.generate_content(prompt)
-            st.markdown("### 🤖 Yapay Zeka Analizi & Yeni Soru")
-            st.write(response.text)
-            
-            # Radar Grafiği Güncelleme
-            fig = go.Figure(go.Scatterpolar(
-                r=[70, 85, 60, 90], # AI'dan gelecek dinamik puanlar
-                theta=['Analiz Gücü','Akıcılık','Teknik Derinlik','Adaptasyon'],
-                fill='toself'
-            ))
-            st.plotly_chart(fig)
+            # Simüle edilmiş yanıt (API'den gelecek)
+            try:
+                response = model.generate_content(prompt)
+                st.write("### 🤖 AI Asistan Notu & Yeni Soru")
+                st.info(response.text)
+            except:
+                st.error("API bağlantısı kontrol edilmeli.")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-# --- GÖRSEL ZAMANLAYICI (İsteğe Bağlı) ---
-if st.button("⏲️ Süreyi Başlat (Görsel Yardımcı)"):
-    bar = st.progress(0)
-    for i in range(limit_saniye):
-        time.sleep(1)
-        bar.progress((i + 1) / limit_saniye)
-    st.warning("⚠️ SÜRE DOLDU! Lütfen kaydı durdurun ve analize bakın.")
+    with c2:
+        st.write("📊 **Anlık Yetkinlik Skoru**")
+        fig = go.Figure(go.Scatterpolar(
+            r=[65, 80, 55, 70], 
+            theta=['Dürüstlük','Teknik','Stres Yönetimi','Uyum'],
+            fill='toself'
+        ))
+        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Manuel komut bayrağını sıfırla
+    if st.session_state.get('force_analyze'):
+        st.session_state.force_analyze = False
