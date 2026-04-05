@@ -3,101 +3,89 @@ import google.generativeai as genai
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
 
-# --- AI CONFIGURATION ---
+# --- AI AYARI ---
 API_KEY = "BURAYA_API_ANAHTARINI_YAZ" 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 
-# Sayfa Ayarları
-st.set_page_config(page_title="AdaptiveHire - AI Interview OS", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="AdaptiveHire - AI Interview", layout="wide")
 
-# --- GELİŞMİŞ KURUMSAL CSS (NLCortex Standartları) ---
+# --- TASARIM CSS ---
 st.markdown("""
     <style>
     .stApp { background-color: #f8f9fa; }
-    [data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e0e0e0; min-width: 300px !important; }
-    
-    /* Kurumsal Beyaz Kartlar */
-    .ah-card {
-        background: white; padding: 30px; border-radius: 12px;
-        border: 1px solid #eaedf2; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        margin-bottom: 20px;
-    }
-    
-    /* Segment Buton Stilleri (Slider yerine Net Yazı) */
-    .segment-label { font-weight: 600; color: #475569; margin-bottom: 10px; display: block; }
-    
-    /* Transkript Ekranı (Beyaz ve Okunaklı) */
-    #transcript-container {
-        background: white; border: 1px solid #e2e8f0; border-radius: 12px;
-        padding: 25px; height: 450px; overflow-y: auto;
-        font-family: 'Inter', sans-serif; line-height: 1.8; color: #1e293b;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
-    }
-
-    /* Sol Menü Sarı Kartlar */
-    .side-item {
-        background-color: #fffbe6; border: 1px solid #ffe58f;
-        padding: 15px; border-radius: 8px; margin-bottom: 10px;
-    }
-
-    /* Mavi Başlat Butonu */
-    .stButton>button { border-radius: 8px; height: 45px; transition: 0.3s; }
-    .main-blue-btn button { background-color: #2563eb !important; color: white !important; width: 100%; border: none; }
+    [data-testid="stSidebar"] { background-color: #ffffff; border-right: 1px solid #e0e0e0; }
+    .ah-card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #eaedf2; margin-bottom: 20px; }
+    #transcript-box { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; height: 400px; overflow-y: auto; color: #1e293b; }
+    .main-blue-btn button { background-color: #2563eb !important; color: white !important; width: 100%; border-radius: 8px; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- SESSION STATE ---
 if 'step' not in st.session_state: st.session_state.step = "setup"
 
-# --- SIDEBAR (Görsel 1 & 4 Hiyerarşisi) ---
+# --- SIDEBAR ---
 with st.sidebar:
-    st.markdown("<h2 style='color:#1e293b;'>AdaptiveHire</h2>", unsafe_allow_html=True)
-    st.markdown("🔍 **Görüşme Ara...**")
-    st.text_input("search", label_visibility="collapsed", placeholder="Aday ismi yazın...")
-    
-    if st.button("➕ Yeni Görüşme Aç", use_container_width=True, type="primary"):
+    st.title("AdaptiveHire")
+    st.text_input("🔍 Görüşme Ara...")
+    if st.button("➕ Yeni Görüşme Aç", use_container_width=True):
         st.session_state.step = "setup"
         st.rerun()
-
     st.divider()
-    st.markdown("<div class='side-item'><b>Görüşme #3</b><br><small>IK Görüşmeleri Profili</small></div>", unsafe_allow_html=True)
-    st.markdown("<div class='side-item' style='background:white; border:1px solid #eee;'><b>Görüşme #2</b><br><small>Teknik Değerlendirme</small></div>", unsafe_allow_html=True)
+    st.info("Görüşme #9 - Şamil ALBAYRAK")
 
-# --- ANA PANEL ---
-
-# 1. KURULUM EKRANI (Görsel 1 & 3 Birebir)
+# --- ANA EKRAN ---
 if st.session_state.step == "setup":
-    st.subheader("Görüşme Ayarları")
-    col_l, col_r = st.columns([1.2, 1])
+    st.subheader("Oturum Ayarları")
+    col_l, col_r = st.columns([1.5, 1])
     
     with col_l:
         st.markdown('<div class="ah-card">', unsafe_allow_html=True)
-        st.markdown("### Oturum Ayarları")
-        st.caption("Başlamadan önce tercihlerinizi seçin")
+        st.write("**GÖRÜNÜM MODU**")
+        st.columns(3)[0].button("💬 Chat", use_container_width=True)
         
-        st.markdown("<br><b>GÖRÜNÜM MODU</b>", unsafe_allow_html=True)
-        m1, m2, m3 = st.columns(3)
-        m1.button("💬 Chat", use_container_width=True)
-        m2.button("♾️ Otonom", use_container_width=True)
-        m3.button("🖥️ Sunum", use_container_width=True)
-        
-        st.markdown("<br><b>GİRİŞ KAYNAĞI</b>", unsafe_allow_html=True)
-        g1, g2 = st.columns(2)
-        g1.button("🎤 Sadece Mikrofon", use_container_width=True)
-        g2.button("🖥️ Mikrofon + Tab Sesi", use_container_width=True)
-        
-        # SEGMENT SÜRESİ (Yazılı ve Net Görünüm)
-        st.markdown("<br><span class='segment-label'>⏱️ SEGMENT SÜRESİ</span>", unsafe_allow_html=True)
-        # Çizgi hatasını önlemek için radyo butonu veya yatay buton seti:
-        seg_choice = st.select_slider("", options=["15 saniye", "20 saniye", "30 saniye", "1 dakika", "2 dakika", "5 dakika"], value="30 saniye")
+        st.write("<br>**SEGMENT SÜRESİ**", unsafe_allow_html=True)
+        seg = st.select_slider("", options=["15 sn", "30 sn", "1 dk", "2 dk", "5 dk"], value="30 sn")
         
         st.divider()
-        st.markdown('<div class="main-blue-btn">', unsafe_allow_html=True)
-        if st.button("Başla →"):
+        if st.button("Mülakatı Başlat →", type="primary", use_container_width=True):
             st.session_state.step = "live"
-            st.session_state.seg_val = seg_choice
             st.rerun()
-        st.markdown('</div></div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with col_r:
+        # İŞTE HATANIN OLDUĞU YER BURASIYDI, ŞİMDİ DOLU VE GİRİNTİLİ:
+        st.markdown('<div class="ah-card">', unsafe_allow_html=True)
+        st.write("**ÖNİZLEME**")
+        st.image("https://cdn-icons-png.flaticon.com/512/2593/2593491.png", width=80)
+        st.caption("Seçilen mod aktif edilecek.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.step == "live":
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        st.markdown('<div id="transcript-box">', unsafe_allow_html=True)
+        components.html("""
+            <div id="out" style="font-family:sans-serif; color:#334155;">🎙️ Ses bekleniyor...</div>
+            <script>
+                const out = document.getElementById('out');
+                const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if(Rec){
+                    const r = new Rec(); r.lang='tr-TR'; r.continuous=true; r.interimResults=true;
+                    r.onresult = (e) => {
+                        let t = ''; for(let i=0; i<e.results.length; i++) t += e.results[i][0].transcript + ' ';
+                        out.innerHTML = '<b>Aday:</b> ' + t;
+                    };
+                    r.start();
+                }
+            </script>
+        """, height=350)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with c2:
+        st.write("**⚙️ Kontrol Paneli**")
+        st.button("📄 Rapor 5a - Aday Profili")
+        st.button("📊 Rapor 5b - Teknik")
+        if st.button("🛑 Bitir", use_container_width=True):
+            st.session_state.step = "setup"
+            st.rerun()
