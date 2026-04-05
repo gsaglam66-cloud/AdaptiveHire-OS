@@ -2,8 +2,8 @@ import streamlit as st
 import google.generativeai as genai
 import plotly.graph_objects as go
 
-# --- AI AYARI (Buraya Kendi API Anahtarını Yapıştır) ---
-API_KEY = "BURAYA_ALDIĞIN_API_KEYİ_YAPIŞTIR"
+# --- AI AYARI (AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY) ---
+API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY"
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-pro')
 
