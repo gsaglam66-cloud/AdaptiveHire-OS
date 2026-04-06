@@ -4,167 +4,165 @@ import plotly.graph_objects as go
 import streamlit.components.v1 as components
 import random
 
-# --- AI AYARI ---
+# --- AI CONFIG ---
 API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-st.set_page_config(page_title="AdaptiveHire - Enterprise OS", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="AdaptiveHire | AI Intelligence", layout="wide", initial_sidebar_state="expanded")
 
-# --- KURUMSAL DARK THEME CSS ---
+# --- PREMIUM NLCORTEX STYLE CSS ---
 st.markdown("""
     <style>
-    .stApp { background-color: #0f172a; color: #f8fafc; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
     
-    /* Sol Panel (İşletme Bilgileri) */
-    .company-section { background: #1e293b; padding: 15px; border-radius: 10px; border-bottom: 2px solid #3b82f6; margin-bottom: 20px; }
+    html, body, [class*="st-"] { font-family: 'Inter', sans-serif; background-color: #050810; color: #e2e8f0; }
     
-    /* Sağ Panel (Raporlama) */
-    .report-card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; margin-top: 10px; }
-    
-    /* Chat Konteynırı */
-    #chat-container { 
-        height: 500px; overflow-y: auto; padding: 20px; 
-        background: #020617; border-radius: 15px; border: 1px solid #1e293b;
+    /* Glassmorphism Cards */
+    .glass-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    /* Chat Container */
+    #chat-scroll {
+        height: 520px; overflow-y: auto; padding: 20px;
+        background: rgba(2, 6, 23, 0.5); border-radius: 15px;
         display: flex; flex-direction: column; gap: 15px;
     }
+
+    /* Modern Bubbles */
+    .ik-bubble { 
+        background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 100%);
+        color: #fecaca; padding: 15px; border-radius: 4px 20px 20px 20px;
+        max-width: 85%; align-self: flex-start; border-left: 4px solid #ef4444;
+    }
+    .aday-bubble { 
+        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+        color: #dbeafe; padding: 15px; border-radius: 20px 4px 20px 20px;
+        max-width: 85%; align-self: flex-end; border-right: 4px solid #3b82f6; text-align: right;
+    }
+
+    /* Status Indicators */
+    .indicator-label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 5px; text-transform: uppercase; }
+    .neon-text-red { color: #f87171; text-shadow: 0 0 10px rgba(248, 113, 113, 0.5); }
+    .neon-text-blue { color: #60a5fa; text-shadow: 0 0 10px rgba(96, 165, 250, 0.5); }
     
-    /* Mesaj Balonları (Kırmızı & Mavi Sabit) */
-    .ik-row { display: flex; justify-content: flex-start; width: 100%; }
-    .ik-bubble { background: #450a0a; border-left: 4px solid #ef4444; color: #fecaca; padding: 12px; border-radius: 0 12px 12px 12px; max-width: 80%; }
-    
-    .aday-row { display: flex; justify-content: flex-end; width: 100%; }
-    .aday-bubble { background: #1e3a8a; border-right: 4px solid #3b82f6; color: #dbeafe; padding: 12px; border-radius: 12px 0 12px 12px; max-width: 80%; text-align: right; }
-    
-    .label { font-size: 0.7rem; font-weight: bold; margin-bottom: 4px; text-transform: uppercase; }
+    /* Ses Dalgası Simülasyonu */
+    .wave-container { display: flex; align-items: center; gap: 3px; height: 30px; }
+    .wave-bar { width: 3px; background: #3b82f6; border-radius: 50px; animation: wave 1s ease-in-out infinite; }
+    @keyframes wave { 0%, 100% { height: 5px; } 50% { height: 25px; } }
     </style>
     """, unsafe_allow_html=True)
 
 # --- SESSION STATE ---
 if 'page' not in st.session_state: st.session_state.page = "setup"
-if 'ik_name' not in st.session_state: st.session_state.ik_name = "İK Uzmanı"
+if 'ik_name' not in st.session_state: st.session_state.ik_name = "İK Direktörü"
 if 'aday_name' not in st.session_state: st.session_state.aday_name = "Aday"
 
-# --- ⬅️ SOL PANEL: İŞLETME BİLGİLERİ ---
+# --- ⬅️ SOL PANEL: İŞLETME & KİMLİK ---
 with st.sidebar:
-    st.markdown("<div class='company-section'>", unsafe_allow_html=True)
-    st.image("https://cdn-icons-png.flaticon.com/512/2800/2800187.png", width=50) # Temsili Logo
-    st.subheader("Kurumsal Bilgiler")
-    st.text_input("Firma Adı", "Global Tech Solutions")
-    st.text_input("Departman", "İnsan Kaynakları")
+    st.markdown("<div class='glass-card' style='text-align:center;'>", unsafe_allow_html=True)
+    st.markdown("### 💠 NE X T H I R E")
+    st.markdown("<p style='font-size:0.8rem; opacity:0.6;'>Enterprise Intelligence v2.0</p>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
     
-    st.info("📊 Mülakat Durumu: Aktif")
-    st.session_state.ik_name = st.text_input("Görüşmeci", st.session_state.ik_name)
-    st.session_state.aday_name = st.text_input("Aday İsmi", st.session_state.aday_name)
+    with st.expander("🏢 İşletme Detayları", expanded=True):
+        st.text_input("Kurum", "Global Corp AI")
+        st.text_input("Departman", "Talent Acquisition")
     
-    st.divider()
-    if st.button("🏠 Ana Dashboard", use_container_width=True):
+    with st.expander("👤 Katılımcılar", expanded=True):
+        st.session_state.ik_name = st.text_input("Görüşmeci", st.session_state.ik_name)
+        st.session_state.aday_name = st.text_input("Aday", st.session_state.aday_name)
+    
+    if st.button("🔌 Sistemi Kapat", use_container_width=True):
         st.session_state.page = "setup"
         st.rerun()
 
 # --- ANA AKIŞ ---
 if st.session_state.page == "setup":
-    st.title("Mülakat Başlatma Merkezi")
-    st.markdown('<div class="report-card">', unsafe_allow_html=True)
-    st.write("Mülakat tipini ve segment süresini belirleyerek canlı yayına geçebilirsiniz.")
-    st.radio("Segment Süresi", ["30 sn", "1 dk", "2 dk"], horizontal=True)
-    if st.button("🔴 CANLI MÜLAKATI BAŞLAT", type="primary", use_container_width=True):
-        st.session_state.page = "live"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center;'>Mülakat Kontrol Merkezi</h2>", unsafe_allow_html=True)
+    col_s1, col_s2, col_s3 = st.columns([1,2,1])
+    with col_s2:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+        st.write("🎯 **Analiz Katmanları**")
+        st.multiselect("Aktif Modüller", ["DISC", "NLP Stres Analizi", "Bilişsel Yük", "Teknik Skor"], default=["DISC", "NLP Stres Analizi"])
+        st.write("<br>⏱️ **Segment Yapılandırması**", unsafe_allow_html=True)
+        st.radio("Süre", ["30 sn", "1 dk", "2 dk", "5 dk"], horizontal=True, label_visibility="collapsed")
+        st.divider()
+        if st.button("🚀 CANLI OTURUMU BAŞLAT", type="primary", use_container_width=True):
+            st.session_state.page = "live"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.page == "live":
-    # Ekranı 2 ana bölüme ayırıyoruz (Orta: Chat, Sağ: Raporlama)
-    col_chat, col_report = st.columns([2, 1])
+    # 3'lü Panel Yapısı (Sol zaten sidebar, Orta: Chat, Sağ: NLCortex Analiz)
+    col_mid, col_right = st.columns([2.2, 1])
 
-    # 🎙️ ORTA PANEL: CANLI TRANSKRİPT
-    with col_chat:
-        st.markdown(f"#### 🎙️ {st.session_state.ik_name} vs {st.session_state.aday_name}")
+    # 🎙️ ORTA PANEL: CANLI AKIŞ
+    with col_mid:
+        st.markdown(f"<div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;'><div><span class='neon-text-red'>● LIVE</span> <span style='margin-left:10px; opacity:0.8;'>{st.session_state.ik_name} vs {st.session_state.aday_name}</span></div><div class='wave-container'><div class='wave-bar'></div><div class='wave-bar' style='animation-delay:0.1s'></div><div class='wave-bar' style='animation-delay:0.2s'></div><div class='wave-bar' style='animation-delay:0.3s'></div></div></div>", unsafe_allow_html=True)
+        
         components.html(f"""
-            <div id="chat-container" style="background:#020617; height:500px; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:15px; font-family:sans-serif;">
-            </div>
+            <div id="chat-scroll" style="background:rgba(2, 6, 23, 0.6); height:520px; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:15px; font-family:'Inter', sans-serif; border-radius:15px;"></div>
             <script>
                 const ik_name = "{st.session_state.ik_name}";
                 const aday_name = "{st.session_state.aday_name}";
-                const chatContainer = document.getElementById('chat-container');
-                const Rec = window.webkitSpeechRecognition || window.Recognition;
+                const scrollDiv = document.getElementById('chat-scroll');
+                const Recognition = window.webkitSpeechRecognition || window.SpeechRecognition;
                 
-                if(Rec) {{
-                    const r = new Rec();
-                    r.lang = 'tr-TR'; r.continuous = true; r.interimResults = true;
-                    let lastText = "";
+                if(Recognition) {{
+                    const rec = new Recognition();
+                    rec.lang = 'tr-TR'; rec.continuous = true; rec.interimResults = true;
+                    let lastFinal = "";
 
-                    r.onresult = (event) => {{
+                    rec.onresult = (event) => {{
                         for (let i = event.resultIndex; i < event.results.length; i++) {{
                             if (event.results[i].isFinal) {{
                                 let text = event.results[i][0].transcript.trim();
-                                if(text === lastText) return;
-                                lastText = text;
+                                if(text === lastFinal) return;
+                                lastFinal = text;
 
-                                let isIK = text.toLowerCase().includes('?') || text.toLowerCase().includes('neden') || text.toLowerCase().includes('hoş');
-                                createBubble(text, isIK);
+                                let isIK = text.toLowerCase().includes('?') || text.toLowerCase().includes('neden') || text.toLowerCase().includes('anlat');
+                                const row = document.createElement('div');
+                                row.style = "display:flex; width:100%; margin-bottom:15px; justify-content:" + (isIK ? 'flex-start' : 'flex-end');
+                                
+                                const bubble = document.createElement('div');
+                                const bg = isIK ? 'linear-gradient(135deg, #450a0a, #7f1d1d)' : 'linear-gradient(135deg, #1e3a8a, #1e40af)';
+                                const border = isIK ? 'border-left:4px solid #ef4444' : 'border-right:4px solid #3b82f6';
+                                const radius = isIK ? '4px 20px 20px 20px' : '20px 4px 20px 20px';
+
+                                bubble.style = `background:${{bg}}; color:white; padding:15px; border-radius:${{radius}}; max-width:80%; ${{border}}; box-shadow:0 4px 15px rgba(0,0,0,0.3);`;
+                                bubble.innerHTML = `<div style="color:${{isIK?'#f87171':'#60a5fa'}}; font-size:0.7rem; font-weight:bold; margin-bottom:5px; text-transform:uppercase;">${{isIK?ik_name:aday_name}}</div>` + text;
+                                
+                                row.appendChild(bubble);
+                                scrollDiv.appendChild(row);
+                                scrollDiv.scrollTop = scrollDiv.scrollHeight;
                             }}
                         }}
                     }};
-
-                    function createBubble(text, isIK) {{
-                        const row = document.createElement('div');
-                        row.className = isIK ? 'ik-row' : 'aday-row';
-                        row.style = "display:flex; width:100%; margin-bottom:10px; justify-content:" + (isIK ? 'flex-start' : 'flex-end');
-                        
-                        const bubble = document.createElement('div');
-                        const color = isIK ? '#450a0a' : '#1e3a8a';
-                        const label = isIK ? ik_name : aday_name;
-                        const labelColor = isIK ? '#ef4444' : '#3b82f6';
-                        const align = isIK ? 'left' : 'right';
-
-                        bubble.style = `background:${{color}}; padding:12px; border-radius:12px; max-width:80%; text-align:${{align}}; color:white; border-${{isIK?'left':'right'}}:4px solid ${{labelColor}};`;
-                        bubble.innerHTML = `<div style="color:${{labelColor}}; font-size:0.7rem; font-weight:bold; margin-bottom:4px;">${{label}}</div>` + text;
-                        
-                        row.appendChild(bubble);
-                        chatContainer.appendChild(row);
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
-                    }}
-                    r.start();
+                    rec.start();
                 }}
             </script>
-        """, height=530)
+        """, height=550)
 
-    # ➡️ SAĞ PANEL: YÖNETİCİ RAPORLAMA EKRANI
-    with col_report:
-        st.markdown("#### 📑 Yönetici Özet Raporu")
+    # ➡️ SAĞ PANEL: NLCORTEX ANALYTICS
+    with col_right:
+        st.markdown("#### 🧠 Psikometrik Analiz")
         
         with st.container():
-            st.markdown('<div class="report-card">', unsafe_allow_html=True)
-            st.write("**Anlık Yetkinlik Analizi**")
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
             
-            # Dinamik Puanlama (Yöneticiler için)
-            st.progress(75, text="Teknik Uyumluluk: %75")
-            st.progress(60, text="Kültürel Adaptasyon: %60")
-            st.progress(90, text="İletişim Becerisi: %90")
+            # Anlık Göstergeler (Gauge Simülasyonu)
+            st.markdown("<p class='indicator-label'>Dürüstlük & Tutarlılık</p>", unsafe_allow_html=True)
+            st.progress(85)
             
-            st.divider()
-            st.write("**Yönetici Notları**")
-            st.text_area("Mülakat devam ederken not al...", height=100, label_visibility="collapsed")
+            st.markdown("<p class='indicator-label'>Bilişsel Yük (Stres)</p>", unsafe_allow_html=True)
+            st.progress(30)
             
-            if st.button("PDF Raporu Oluştur", use_container_width=True):
-                st.toast("Rapor hazırlanıyor...")
-            
-            st.divider()
-            if st.button("🛑 MÜLAKATI BİTİR VE KAYDET", type="primary", use_container_width=True):
-                st.session_state.page = "report"
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-
-# --- RAPOR SAYFASI ---
-elif st.session_state.page == "report":
-    st.balloons()
-    st.header("🏁 Mülakat Değerlendirme Raporu")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown('<div class="report-card"><h3>Aday Künyesi</h3><p>İsim: <b>'+st.session_state.aday_name+'</b></p><p>Pozisyon: Kıdemli Yazılım Geliştirici</p></div>', unsafe_allow_html=True)
-    with col2:
-        fig = go.Figure(go.Scatterpolar(r=[80, 70, 90, 85, 75], theta=['Teknik','Ekip','DISC','Metropolitan','EQ'], fill='toself'))
-        st.plotly_chart(fig, use_container_width=True)
-    st.button("Yeni Mülakat Başlat", on_click=lambda: st.session_state.update({"page":"setup"}))
+            st.markdown("<p class='indicator-label'>Teknik Derinlik</p>", unsafe_allow_html=True)
+            st.progress
