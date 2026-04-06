@@ -5,155 +5,155 @@ import streamlit.components.v1 as components
 import random
 import string
 
-# --- AI AYARLARI ---
+# --- AI AYARI ---
 API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-st.set_page_config(page_title="AdaptiveHire - AI Panel & Autonomous OS", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="AdaptiveHire - Dual Audio AI", layout="wide", initial_sidebar_state="expanded")
 
-# --- KURUMSAL CSS ---
+# --- GELİŞMİŞ CSS ---
 st.markdown("""
     <style>
     .stApp { background-color: #fcfdfe; }
-    .ah-card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .ah-card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
     
-    /* Segment Süreleri - Ayrı Ayrı Kutucuk Tasarımı */
+    /* Segment Butonları */
     div[data-testid="stHorizontalBlock"] .stRadio > div { gap: 10px; }
     .stRadio label {
-        background: white !important;
-        border: 1px solid #cbd5e1 !important;
-        padding: 8px 18px !important;
-        border-radius: 8px !important;
-        font-weight: 500;
-        transition: 0.3s;
+        background: white !important; border: 1px solid #cbd5e1 !important;
+        padding: 8px 18px !important; border-radius: 8px !important; font-weight: 500;
     }
-    .stRadio label:hover { border-color: #2563eb !important; background: #eff6ff !important; }
 
-    /* Sunum Modu Slaytı */
+    /* Transkript Balonları Tasarımı */
+    .chat-container { height: 450px; overflow-y: auto; padding: 20px; background: #f8fafc; border-radius: 15px; border: 1px solid #e2e8f0; }
+    .msg { margin-bottom: 15px; padding: 10px 15px; border-radius: 10px; line-height: 1.5; }
+    .ik-msg { background: #eff6ff; border-left: 5px solid #2563eb; color: #1e3a8a; }
+    .aday-msg { background: #ffffff; border-left: 5px solid #10b981; color: #064e3b; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .speaker-name { font-weight: bold; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 4px; display: block; }
+    
     .presentation-slide {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         color: white; padding: 80px; border-radius: 20px; text-align: center;
-        min-height: 450px; display: flex; flex-direction: column; justify-content: center;
-        border: 4px solid #3b82f6; margin-top: 20px;
+        min-height: 400px; display: flex; flex-direction: column; justify-content: center;
+        border: 4px solid #3b82f6;
     }
-    
-    /* Panelist Kutuları */
-    .panelist-box { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #2563eb; font-size: 0.9rem; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- SESSION STATE ---
 if 'page' not in st.session_state: st.session_state.page = "setup"
 if 'view_mode' not in st.session_state: st.session_state.view_mode = "Chat"
-if 'panelists' not in st.session_state: st.session_state.panelists = ["Ana IK Uzmanı (Siz)"]
+if 'ik_name' not in st.session_state: st.session_state.ik_name = "İK UZMANI"
+if 'aday_name' not in st.session_state: st.session_state.aday_name = "ADAY"
 if 'is_paused' not in st.session_state: st.session_state.is_paused = False
-if 'current_q' not in st.session_state: st.session_state.current_q = "Hoş geldiniz. Kendinizden biraz bahseder misiniz?"
 
-# --- SIDEBAR: YÖNETİM ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.markdown("<h2 style='color:#2563eb;'>AdaptiveHire</h2>", unsafe_allow_html=True)
-    st.markdown("### 👥 Görüşme Paneli")
-    for p in st.session_state.panelists:
-        st.markdown(f'<div class="panelist-box">👤 {p}</div>', unsafe_allow_html=True)
-    
-    p_invite = st.text_input("➕ Uzman Davet Et")
-    if st.button("Davet Gönder") and p_invite:
-        st.session_state.panelists.append(p_invite)
-        st.rerun()
-    
+    st.session_state.ik_name = st.text_input("Kendi İsminiz (İK)", st.session_state.ik_name)
+    st.session_state.aday_name = st.text_input("Aday İsmi (Biliniyorsa)", st.session_state.aday_name)
     st.divider()
     if st.button("🏠 Ana Menü", use_container_width=True):
         st.session_state.page = "setup"
         st.rerun()
 
-# --- ANA EKRANLAR ---
+# --- ANA AKIŞ ---
 
-# 1. SETUP EKRANI (Panel & Otonom Seçimi)
 if st.session_state.page == "setup":
-    st.subheader("Mülakat Yapılandırma Merkezi")
+    st.subheader("Mülakat Yapılandırması")
     c1, c2 = st.columns([1.5, 1])
-    
     with c1:
         st.markdown('<div class="ah-card">', unsafe_allow_html=True)
-        st.write("**GÖRÜNÜM VE ÇALIŞMA MODU**")
-        st.session_state.view_mode = st.radio("Seçin", ["Chat", "Sunum", "Otonom Link"], horizontal=True, label_visibility="collapsed")
+        st.write("**ÇALIŞMA MODU**")
+        st.session_state.view_mode = st.radio("Mod", ["Chat", "Sunum", "Otonom Link"], horizontal=True, label_visibility="collapsed")
         
         st.write("<br>**SEGMENT SÜRESİ** (Çoktan Seçmeli)", unsafe_allow_html=True)
         st.radio("Süre", ["15 sn", "30 sn", "1 dk", "2 dk", "5 dk"], index=1, horizontal=True, label_visibility="collapsed")
         
-        st.write("<br>**PSİKOMETRİK KATMANLAR**", unsafe_allow_html=True)
-        st.multiselect("Envanterler", ["DISC", "Metropolitan", "Big Five", "Star Uyumu"], default=["DISC"])
+        st.write("<br>**ANALİZ TİPLERİ**", unsafe_allow_html=True)
+        st.multiselect("Envanterler", ["DISC", "Metropolitan", "Duygu Analizi"], default=["DISC"])
         
         st.divider()
-        if st.session_state.view_mode == "Otonom Link":
-            if st.button("🔗 Aday İçin Link Oluştur", type="primary", use_container_width=True):
-                st.code(f"https://adaptivehire.ai/interview/{''.join(random.choices(string.ascii_lowercase, k=10))}")
-                st.info("Bu linki adaya ileterek mülakatı başlatmasını isteyebilirsiniz.")
-        else:
-            if st.button("Mülakatı Başlat →", type="primary", use_container_width=True):
-                st.session_state.page = "live"
-                st.rerun()
+        if st.button("Mülakatı Başlat →", type="primary", use_container_width=True):
+            st.session_state.page = "live"
+            st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-# 2. CANLI MÜLAKAT (Sunum ve Chat Hibrit)
 elif st.session_state.page == "live":
-    # Header & Durum
-    st.markdown(f"### 🎙️ Canlı Yayın | Mod: {st.session_state.view_mode}")
+    st.markdown(f"### 🎙️ Canlı Görüşme Paneli | {st.session_state.view_mode} Modu")
     
-    if st.session_state.view_mode == "Sunum":
-        st.markdown(f'<div class="presentation-slide"><div style="font-size:1rem; opacity:0.6;">SORU</div><div style="font-size:2.5rem; font-weight:bold; margin:20px 0;">{st.session_state.current_q}</div><div style="font-size:0.9rem; color:#3b82f6;">ADAPTIVEHIRE AI ANALİZİ AKTİF</div></div>', unsafe_allow_html=True)
-        if st.button("✨ AI'dan Yeni Soru İste", use_container_width=True):
-            st.session_state.current_q = random.choice(["Gelecek planlarınız neler?", "En büyük başarınız nedir?", "Neden biz?"])
-            st.rerun()
-        if st.button("⬅️ Chat Moduna Dön"):
-            st.session_state.view_mode = "Chat"
-            st.rerun()
-    else:
-        col_m, col_a = st.columns([2.2, 1])
-        with col_m:
-            st.markdown('<div style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:20px; height:400px; overflow-y:auto;">', unsafe_allow_html=True)
-            if not st.session_state.is_paused:
-                components.html("""
-                    <div id="o" style="font-family:sans-serif; color:#1e293b;">🎙️ Aday konuşuyor, analiz ediliyor...</div>
-                    <script>
-                        const R = window.webkitSpeechRecognition || window.Recognition;
-                        if(R){ 
-                            const r = new R(); r.lang='tr-TR'; r.continuous=true; r.interimResults=true;
-                            r.onresult = (e) => {
-                                let t = ''; for(let i=0; i<e.results.length; i++) t += e.results[i][0].transcript + ' ';
-                                document.getElementById('o').innerHTML = '<b>Aday:</b> ' + t;
-                            }; r.start();
-                        }
-                    </script>
-                """, height=350)
-            else:
-                st.warning("⏸️ Mülakat şu an duraklatıldı.")
-            st.markdown('</div>', unsafe_allow_html=True)
+    col_main, col_side = st.columns([2.5, 1])
+    
+    with col_main:
+        if st.session_state.view_mode == "Sunum":
+            st.markdown(f'<div class="presentation-slide"><div class="speaker-name" style="color:#3b82f6">MEVCUT SORU</div><div style="font-size:2.2rem; font-weight:bold;">{st.session_state.aday_name}, bize kariyer hedeflerinden bahseder misin?</div></div>', unsafe_allow_html=True)
+        else:
+            # Karşılıklı Transkript Alanı (Çift Kanal Simulasyonu)
+            st.markdown('<div class="chat-container" id="chat-box">', unsafe_allow_html=True)
             
-        with col_a:
-            st.markdown("### 🛠️ Müdahale")
-            if st.button("⏸️/▶️ Duraklat/Devam", use_container_width=True):
-                st.session_state.is_paused = not st.session_state.is_paused
-                st.rerun()
-            st.slider("Canlı Puanlama (Teknik)", 0, 100, 70)
-            if st.button("🖥️ Sunum Moduna Geç", use_container_width=True):
-                st.session_state.view_mode = "Sunum"
-                st.rerun()
-            st.divider()
-            if st.button("🛑 Bitir", type="primary", use_container_width=True):
-                st.session_state.page = "report"
-                st.rerun()
+            components.html(f"""
+                <div id="display"></div>
+                <script>
+                    const ik_name = "{st.session_state.ik_name}";
+                    const aday_name = "{st.session_state.aday_name}";
+                    const Recognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+                    
+                    if(Recognition) {{
+                        const rec = new Recognition();
+                        rec.lang = 'tr-TR'; rec.continuous = true; rec.interimResults = true;
+                        
+                        rec.onresult = (event) => {{
+                            let text = "";
+                            for (let i = event.resultIndex; i < event.results.length; i++) {{
+                                text = event.results[i][0].transcript;
+                                let isFinal = event.results[i].isFinal;
+                                
+                                // Basit bir 'uzunluk' mantığıyla kimin konuştuğunu tahmin etme simulasyonu
+                                // Gerçek projede iki ayrı mikrofon girişi veya diarization servisi kullanılır
+                                let speaker = (text.length % 2 === 0) ? ik_name : aday_name;
+                                let style = (text.length % 2 === 0) ? "ik-msg" : "aday-msg";
+                                
+                                document.getElementById('display').innerHTML += 
+                                    '<div class="msg ' + style + '">' +
+                                    '<span class="speaker-name">' + speaker + ':</span>' + text + '</div>';
+                            }}
+                            window.scrollTo(0,document.body.scrollHeight);
+                        }};
+                        rec.start();
+                    }}
+                </script>
+            """, height=400)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-# 3. RAPOR
+    with col_side:
+        st.markdown("### 🛠️ Canlı Kontrol")
+        if st.button("⏸️ Ara Ver / Devam Et", use_container_width=True):
+            st.session_state.is_paused = not st.session_state.is_paused
+            st.rerun()
+            
+        st.write("**Veri Müdahalesi**")
+        st.slider("Adayın Enerji Seviyesi", 0, 100, 80)
+        
+        with st.expander("📝 Notlar", expanded=True):
+            st.text_area("Görüşme notu...", height=100)
+            
+        st.divider()
+        if st.button("🛑 Mülakatı Bitir", type="primary", use_container_width=True):
+            st.session_state.page = "report"
+            st.rerun()
+
 elif st.session_state.page == "report":
-    st.markdown("# 📑 Final Değerlendirme Raporu")
-    col_l, col_r = st.columns([2, 1])
-    with col_l:
-        st.markdown('<div class="ah-card"><h4>IK ve AI Ortak Kararı</h4><p>Genel Uyum: <b>%84</b></p><hr><p>Adayın Metropolitan olgunluk seviyesi kıdemli pozisyonlar için yeterli görülmüştür.</p></div>', unsafe_allow_html=True)
-    with col_r:
-        fig = go.Figure(go.Scatterpolar(r=[85, 90, 70, 80], theta=['DISC-D','Teknik','EQ','Uyum'], fill='toself'))
-        st.plotly_chart(fig, use_container_width=True)
-    if st.button("Yeni Görüşme"):
+    st.markdown("# 📑 Mülakat Analiz Raporu")
+    st.info(f"İK Uzmanı: {st.session_state.ik_name} | Aday: {st.session_state.aday_name}")
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown('<div class="ah-card"><h4>Diyalog Özeti</h4><p>Toplam 12 dakika süren görüşmede konuşma oranı %40 İK - %60 Aday olarak gerçekleşmiştir.</p></div>', unsafe_allow_html=True)
+    with c2:
+        fig = go.Figure(go.Scatterpolar(r=[80, 70, 90, 85], theta=['Uyum','Teknik','İletişim','Enerji'], fill='toself'))
+        st.plotly_chart(fig)
+    
+    if st.button("Yeni Mülakat"):
         st.session_state.page = "setup"
         st.rerun()
