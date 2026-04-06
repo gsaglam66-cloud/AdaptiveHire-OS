@@ -4,39 +4,43 @@ import plotly.graph_objects as go
 import streamlit.components.v1 as components
 import random
 
-# --- AI AYARI ---
+# --- AI CONFIG ---
 API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-st.set_page_config(page_title="AdaptiveHire - Real-Time Dual Audio", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="AdaptiveHire - Precise Audio OS", layout="wide", initial_sidebar_state="expanded")
 
-# --- GELİŞMİŞ RENKLİ CSS ---
+# --- PROFESYONEL TERMİNAL CSS ---
 st.markdown("""
     <style>
-    .stApp { background-color: #fcfdfe; }
-    .ah-card { background: white; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+    .stApp { background-color: #0f172a; color: #f8fafc; }
+    .ah-card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
     
-    /* Transkript Konteynırı */
-    .chat-box { height: 500px; overflow-y: auto; padding: 20px; background: #1e1e1e; border-radius: 15px; display: flex; flex-direction: column; gap: 10px; }
+    /* Transkript Alanı */
+    #chat-container { 
+        height: 550px; overflow-y: auto; padding: 25px; 
+        background: #020617; border-radius: 15px; border: 1px solid #1e293b;
+        display: flex; flex-direction: column; gap: 15px;
+    }
     
-    /* İK Uzmanı Stili (KIRMIZI) */
+    /* İK UZMANI - KIRMIZI (SOL) */
+    .ik-row { display: flex; justify-content: flex-start; width: 100%; }
     .ik-bubble { 
-        background: #450a0a; border-left: 5px solid #ef4444; color: #fca5a5; 
-        padding: 12px; border-radius: 8px; align-self: flex-start; max-width: 85%;
-        font-family: 'Courier New', Courier, monospace;
+        background: #450a0a; border-left: 4px solid #ef4444; color: #fecaca;
+        padding: 12px 18px; border-radius: 0 15px 15px 15px; max-width: 75%;
+        box-shadow: 4px 4px 10px rgba(0,0,0,0.3);
     }
-    .ik-label { color: #ef4444; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block; }
 
-    /* Aday Stili (MAVİ) */
+    /* ADAY - MAVİ (SAĞ) */
+    .aday-row { display: flex; justify-content: flex-end; width: 100%; }
     .aday-bubble { 
-        background: #172554; border-left: 5px solid #3b82f6; color: #bfdbfe; 
-        padding: 12px; border-radius: 8px; align-self: flex-end; max-width: 85%;
-        font-family: 'Courier New', Courier, monospace; text-align: right;
+        background: #1e3a8a; border-right: 4px solid #3b82f6; color: #dbeafe;
+        padding: 12px 18px; border-radius: 15px 0 15px 15px; max-width: 75%;
+        text-align: right; box-shadow: -4px 4px 10px rgba(0,0,0,0.3);
     }
-    .aday-label { color: #3b82f6; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block; }
-
-    .interim-text { opacity: 0.6; font-style: italic; }
+    
+    .label { font-size: 0.7rem; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -47,98 +51,98 @@ if 'aday_name' not in st.session_state: st.session_state.aday_name = "ADAY"
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.markdown("<h2 style='color:#2563eb;'>AdaptiveHire</h2>", unsafe_allow_html=True)
-    st.session_state.ik_name = st.text_input("İK Uzmanı:", st.session_state.ik_name)
-    st.session_state.aday_name = st.text_input("Aday:", st.session_state.aday_name)
-    st.divider()
-    if st.button("🏠 Dashboard", use_container_width=True):
+    st.markdown("<h2 style='color:#3b82f6;'>AdaptiveHire</h2>", unsafe_allow_html=True)
+    st.session_state.ik_name = st.text_input("İK İsmi", st.session_state.ik_name)
+    st.session_state.aday_name = st.text_input("Aday İsmi", st.session_state.aday_name)
+    if st.button("🏠 Menüye Dön", use_container_width=True):
         st.session_state.page = "setup"
         st.rerun()
 
-# --- ANA AKIŞ ---
+# --- FLOW ---
 if st.session_state.page == "setup":
-    st.subheader("Mülakat Paneli")
+    st.subheader("Mülakat Sistemi")
     st.markdown('<div class="ah-card">', unsafe_allow_html=True)
-    st.write("**SEGMENT SÜRESİ**")
-    st.radio("Süre Seçin", ["15 sn", "30 sn", "1 dk", "2 dk", "5 dk"], index=1, horizontal=True, label_visibility="collapsed")
-    if st.button("Mülakatı Başlat →", type="primary", use_container_width=True):
+    st.radio("Segment Süresi", ["15 sn", "30 sn", "1 dk", "2 dk", "5 dk"], index=1, horizontal=True)
+    if st.button("🔴 Mülakatı Başlat", type="primary", use_container_width=True):
         st.session_state.page = "live"
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.page == "live":
-    st.markdown(f"### 🎙️ Canlı Görüşme Aktif")
+    c1, c2 = st.columns([2.5, 1])
     
-    col_main, col_side = st.columns([2.5, 1])
-    
-    with col_main:
-        # GERÇEK ZAMANLI VE RENKLİ TRANSKRİPT MOTORU
+    with c1:
+        # GELİŞMİŞ JS: KİLİTLEME VE SIFIR TEKRAR MANTIĞI
         components.html(f"""
-            <div id="container" style="background:#1e1e1e; height:500px; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:12px; border-radius:15px; font-family:sans-serif;">
+            <div id="chat-container" style="background:#020617; height:550px; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:15px; font-family:sans-serif;">
             </div>
             
             <script>
                 const ik_name = "{st.session_state.ik_name}";
                 const aday_name = "{st.session_state.aday_name}";
-                const container = document.getElementById('container');
+                const chatContainer = document.getElementById('chat-container');
                 
-                const Recognition = window.webkitSpeechRecognition || window.SpeechRecognition;
-                if(Recognition) {{
-                    const rec = new Recognition();
-                    rec.lang = 'tr-TR';
-                    rec.continuous = true;
-                    rec.interimResults = true; // Hız için true yapıldı
+                const Rec = window.webkitSpeechRecognition || window.SpeechRecognition;
+                if(Rec) {{
+                    const r = new Rec();
+                    r.lang = 'tr-TR'; r.continuous = true; r.interimResults = true;
                     
-                    let currentDiv = null;
+                    let lastFinalText = "";
 
-                    rec.onresult = (event) => {{
-                        let interimTranscript = '';
-                        let finalTranscript = '';
-
+                    r.onresult = (event) => {{
+                        let interim = "";
                         for (let i = event.resultIndex; i < event.results.length; i++) {{
-                            const transcript = event.results[i][0].transcript;
+                            let transcript = event.results[i][0].transcript.trim();
+                            
                             if (event.results[i].isFinal) {{
-                                finalTranscript += transcript;
-                            }} else {{
-                                interimTranscript += transcript;
+                                if(transcript === lastFinalText) return; // Tekrarı blokla
+                                lastFinalText = transcript;
+                                
+                                // Analiz: Kim konuşuyor?
+                                let textLower = transcript.toLowerCase();
+                                let isIK = textLower.includes('?') || textLower.includes('mi') || textLower.includes('neden') || textLower.includes('anlat');
+                                
+                                createBubble(transcript, isIK);
                             }}
-                        }}
-
-                        if (finalTranscript || interimTranscript) {{
-                            const text = (finalTranscript || interimTranscript).toLowerCase();
-                            
-                            // AKILLI ANALİZ VE RENK ATAMASI
-                            let isIK = text.includes('mi') || text.includes('mısınız') || text.includes('neden') || text.includes('anlat') || text.includes('hoş gel');
-                            let speaker = isIK ? ik_name : aday_name;
-                            let bubbleClass = isIK ? 'background:#450a0a; border-left:5px solid #ef4444; color:#fca5a5; align-self:flex-start;' : 'background:#172554; border-left:5px solid #3b82f6; color:#bfdbfe; align-self:flex-end; text-align:right;';
-                            let labelColor = isIK ? '#ef4444' : '#3b82f6';
-
-                            if (!currentDiv || event.results[event.resultIndex].isFinal) {{
-                                currentDiv = document.createElement('div');
-                                currentDiv.style = bubbleClass + "padding:12px; border-radius:8px; max-width:80%; font-size:1rem; margin-bottom:10px;";
-                                container.appendChild(currentDiv);
-                            }}
-
-                            currentDiv.innerHTML = `<span style="color:${{labelColor}}; font-weight:bold; font-size:0.7rem; display:block; margin-bottom:4px;">${{speaker}}</span>` + 
-                                                   (finalTranscript ? finalTranscript : `<span style="opacity:0.6;">${{interimTranscript}}</span>`);
-                            
-                            container.scrollTop = container.scrollHeight;
                         }}
                     }};
-                    rec.start();
+
+                    function createBubble(text, isIK) {{
+                        const row = document.createElement('div');
+                        row.className = isIK ? 'ik-row' : 'aday-row';
+                        row.style = "display:flex; width:100%; justify-content:" + (isIK ? 'flex-start' : 'flex-end') + "; margin-bottom:15px;";
+                        
+                        const bubble = document.createElement('div');
+                        const color = isIK ? '#450a0a' : '#1e3a8a';
+                        const border = isIK ? 'border-left:4px solid #ef4444' : 'border-right:4px solid #3b82f6';
+                        const textColor = isIK ? '#fecaca' : '#dbeafe';
+                        const textAlign = isIK ? 'left' : 'right';
+                        const label = isIK ? ik_name : aday_name;
+                        const labelColor = isIK ? '#ef4444' : '#3b82f6';
+
+                        bubble.style = `background:${{color}}; ${{border}}; color:${{textColor}}; padding:12px 18px; border-radius:12px; max-width:75%; text-align:${{textAlign}}; font-family:sans-serif;`;
+                        bubble.innerHTML = `<div style="color:${{labelColor}}; font-size:0.7rem; font-weight:bold; margin-bottom:5px;">${{label}}</div>` + text;
+                        
+                        row.appendChild(bubble);
+                        chatContainer.appendChild(row);
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }}
+                    
+                    r.start();
                 }}
             </script>
-        """, height=530)
+        """, height=580)
 
-    with col_side:
-        st.markdown("### 📊 Analiz")
-        st.error(f"🔴 {st.session_state.ik_name} (Kırmızı)")
-        st.info(f"🔵 {st.session_state.aday_name} (Mavi)")
+    with c2:
+        st.markdown("### 🛠️ Canlı Kontrol")
+        st.markdown(f"🔴 **{st.session_state.ik_name}**")
+        st.markdown(f"🔵 **{st.session_state.aday_name}**")
         st.divider()
+        st.text_area("Anlık Notlar", placeholder="Adayın yetkinlik notlarını buraya girin...")
         if st.button("🛑 Mülakatı Bitir", type="primary", use_container_width=True):
             st.session_state.page = "report"
             st.rerun()
 
 elif st.session_state.page == "report":
-    st.success("Mülakat Raporu Hazırlandı.")
-    st.button("Dashboard'a Dön", on_click=lambda: st.session_state.update({"page": "setup"}))
+    st.title("Mülakat Tamamlandı")
+    st.button("Yeni Mülakata Başla", on_click=lambda: st.session_state.update({"page":"setup"}))
