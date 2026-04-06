@@ -2,140 +2,153 @@ import streamlit as st
 import google.generativeai as genai
 import plotly.graph_objects as go
 import streamlit.components.v1 as components
-import random
-import string
 
-# --- AI AYARI ---
+# --- AI CONFIG ---
 API_KEY = "AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY" 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-st.set_page_config(page_title="AdaptiveHire - Autonomous AI Interview", layout="wide")
+st.set_page_config(page_title="AdaptiveHire - Panel Interview OS", layout="wide", initial_sidebar_state="expanded")
 
-# --- GELİŞMİŞ CSS ---
+# --- KURUMSAL CSS ---
 st.markdown("""
     <style>
     .stApp { background-color: #fcfdfe; }
-    .ah-card { background: white; padding: 25px; border-radius: 15px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-    .status-online { background: #dcfce7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
-    .link-box { background: #f1f5f9; padding: 15px; border-radius: 8px; border: 1px dashed #2563eb; font-family: monospace; margin: 10px 0; }
-    /* Segment Seçim Kutuları */
-    .stRadio > div { flex-direction: row !important; gap: 10px; }
-    .stRadio label { background: white !important; border: 1px solid #cbd5e1 !important; padding: 8px 16px !important; border-radius: 8px !important; }
+    .ah-card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+    
+    /* Canlı Durum Göstergeleri */
+    .status-badge { padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .status-online { background: #dcfce7; color: #166534; }
+    .status-paused { background: #fef3c7; color: #92400e; }
+    
+    /* Panelist Kartları */
+    .panelist-box { background: #f1f5f9; padding: 10px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #2563eb; }
+    
+    /* Segment Butonları */
+    .stRadio > div { flex-direction: row !important; gap: 8px; }
+    .stRadio label { background: white !important; border: 1px solid #cbd5e1 !important; padding: 6px 12px !important; border-radius: 6px !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SESSION STATE ---
-if 'mode' not in st.session_state: st.session_state.mode = "admin" # admin veya candidate
-if 'page' not in st.session_state: st.session_state.page = "dashboard"
-if 'interview_link' not in st.session_state: st.session_state.interview_link = ""
+# --- SESSION STATE YÖNETİMİ ---
+if 'page' not in st.session_state: st.session_state.page = "setup"
+if 'is_paused' not in st.session_state: st.session_state.is_paused = False
+if 'panelists' not in st.session_state: st.session_state.panelists = ["Ana IK Uzmanı (Siz)"]
 
-def generate_link():
-    suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-    return f"https://adaptivehire.ai/interview/{suffix}"
-
-# --- SIDEBAR ---
+# --- SIDEBAR: PANEL YÖNETİMİ ---
 with st.sidebar:
-    st.title("AdaptiveHire")
-    if st.session_state.mode == "admin":
-        st.subheader("👨‍💼 IK Yönetim Paneli")
-        if st.button("📊 Dashboard'a Dön", use_container_width=True):
-            st.session_state.page = "dashboard"
+    st.markdown("<h2 style='color:#2563eb;'>AdaptiveHire</h2>", unsafe_allow_html=True)
+    
+    st.markdown("### 👥 Görüşme Paneli")
+    for p in st.session_state.panelists:
+        st.markdown(f'<div class="panelist-box">👤 {p}</div>', unsafe_allow_html=True)
+    
+    new_panelist = st.text_input("➕ Yeni Uzman Davet Et", placeholder="E-posta veya İsim...")
+    if st.button("Davet Gönder"):
+        if new_panelist:
+            st.session_state.panelists.append(new_panelist)
+            st.success(f"{new_panelist} mülakata dahil edildi.")
             st.rerun()
-    else:
-        st.subheader("👤 Aday Girişi")
-        st.info("Otonom Mülakat Sistemi Aktif")
+
+    st.divider()
+    if st.button("🏠 Dashboard", use_container_width=True):
+        st.session_state.page = "setup"
+        st.rerun()
 
 # --- ANA AKIŞ ---
 
-# 1. ADMIN DASHBOARD: Link Oluşturma Ekranı
-if st.session_state.page == "dashboard" and st.session_state.mode == "admin":
-    st.markdown("## Mülakat Yönetimi")
+if st.session_state.page == "setup":
+    st.subheader("Yeni Panel Mülakatı Yapılandırması")
     col1, col2 = st.columns([1.5, 1])
     
     with col1:
         st.markdown('<div class="ah-card">', unsafe_allow_html=True)
-        st.write("### 🔗 Otonom Mülakat Linki Oluştur")
-        st.write("Adaya gönderilecek link ile mülakatı AI'nın yönetmesini sağlayın.")
+        st.write("**MÜLAKAT PARAMETRELERİ**")
+        st.multiselect("Değerlendirme Kriterleri", ["DISC", "Metropolitan", "Teknik Yetkinlik", "Kültürel Uyum"], default=["DISC", "Teknik Yetkinlik"])
         
-        target_role = st.text_input("Pozisyon Adı", "Kıdemli Yazılım Geliştirici")
-        test_type = st.multiselect("Uygulanacak Envanterler", ["DISC", "Metropolitan", "Big Five", "Teknik Case"], default=["DISC"])
+        st.write("<br>**SEGMENT SÜRESİ**", unsafe_allow_html=True)
+        st.radio("Süre", options=["15 sn", "30 sn", "1 dk", "2 dk", "5 dk"], index=1, horizontal=True, label_visibility="collapsed")
         
-        if st.button("Özel Mülakat Linki Oluştur", type="primary"):
-            st.session_state.interview_link = generate_link()
-            
-        if st.session_state.interview_link:
-            st.markdown(f'<div class="link-box">{st.session_state.interview_link}</div>', unsafe_allow_html=True)
-            st.success("Link oluşturuldu! Bu linki adaya e-posta ile gönderebilirsiniz.")
-            
-            if st.button("Aday Ekranını Simüle Et (Önizleme)"):
-                st.session_state.mode = "candidate"
-                st.session_state.page = "candidate_welcome"
-                st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# 2. ADAY KARŞILAMA EKRANI (Linke tıkladığında gelen yer)
-elif st.session_state.page == "candidate_welcome" and st.session_state.mode == "candidate":
-    st.markdown("<h1 style='text-align: center;'>AdaptiveHire Mülakat Platformu</h1>", unsafe_allow_html=True)
-    st.markdown('<div class="ah-card" style="max-width: 700px; margin: auto; text-align: center;">', unsafe_allow_html=True)
-    st.write("### Hoş Geldiniz!")
-    st.write("Bu mülakat Yapay Zeka (AI) tarafından yönetilecektir. Lütfen sessiz bir ortamda olduğunuzdan ve mikrofonunuzun çalıştığından emin olun.")
-    st.write("**Pozisyon:** Kıdemli Yazılım Geliştirici")
-    st.write("**Tahmini Süre:** 15 Dakika")
-    
-    if st.button("Sistemi Kontrol Et ve Başla →", type="primary", use_container_width=True):
-        st.session_state.page = "candidate_live"
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 3. OTONOM CANLI MÜLAKAT (AI Soru Sorar - Aday Cevaplar)
-elif st.session_state.page == "candidate_live":
-    st.markdown('<span class="status-online">🔴 OTONOM MÜLAKAT AKTİF</span>', unsafe_allow_html=True)
-    
-    c1, c2 = st.columns([2, 1])
-    
-    with c1:
-        st.markdown('<div class="ah-card">', unsafe_allow_html=True)
-        st.write("### 🤖 AI Mülakatçı")
-        st.info("AI: 'Hoş geldiniz. Öncelikle bize son projenizde karşılaştığınız en büyük teknik zorluktan bahseder misiniz?'")
-        
-        st.markdown('<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:20px; height:300px; margin-top:20px;">', unsafe_allow_html=True)
-        components.html("""
-            <div id="log" style="font-family:sans-serif; color:#334155;">🎙️ Sizi dinliyorum, lütfen konuşun...</div>
-            <script>
-                const Rec = window.webkitSpeechRecognition || window.SpeechRecognition;
-                if(Rec){
-                    const r = new Rec(); r.lang='tr-TR'; r.continuous=true; r.interimResults=true;
-                    r.onresult = (e) => {
-                        let t = ''; for(let i=0; i<e.results.length; i++) t += e.results[i][0].transcript + ' ';
-                        document.getElementById('log').innerHTML = '<b style="color:#2563eb;">Siz:</b> ' + t;
-                    };
-                    r.start();
-                }
-            </script>
-        """, height=250)
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with c2:
-        st.write("**İlerleme**")
-        st.progress(25)
-        st.write("Soru 1 / 4")
         st.divider()
-        st.warning("Mülakat sırasında sayfayı kapatmayın. AI konuşmanızı anlık analiz ederek DISC profilinizi oluşturuyor.")
-        if st.button("Mülakatı Tamamla ve Gönder", use_container_width=True):
-            st.session_state.page = "finish"
+        if st.button("Panel Mülakatını Başlat →", type="primary", use_container_width=True):
+            st.session_state.page = "live"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.page == "live":
+    # CANLI KONTROLÜ (Müdahale Paneli)
+    c_header, c_status = st.columns([3, 1])
+    with c_header:
+        st.markdown("### 🎙️ Panel Mülakatı: Canlı Yayın")
+    with c_status:
+        if st.session_state.is_paused:
+            st.markdown('<span class="status-badge status-paused">⏸️ MÜLAKAT DURDURULDU</span>', unsafe_allow_html=True)
+        else:
+            st.markdown('<span class="status-badge status-online">🔴 CANLI ANALİZ AKTİF</span>', unsafe_allow_html=True)
+
+    col_main, col_admin = st.columns([2.2, 1])
+
+    with col_main:
+        # Transkript Alanı
+        st.markdown('<div id="transcript-box" style="background:white; border:1px solid #e2e8f0; border-radius:12px; padding:20px; height:450px; overflow-y:auto;">', unsafe_allow_html=True)
+        if not st.session_state.is_paused:
+            components.html("""
+                <div id="out" style="font-family:sans-serif; color:#1e293b; font-size:1.1rem;">🎙️ Adayın konuşması analiz ediliyor...</div>
+                <script>
+                    const Rec = window.webkitSpeechRecognition || window.SpeechRecognition;
+                    if(Rec){
+                        const r = new Rec(); r.lang='tr-TR'; r.continuous=true; r.interimResults=true;
+                        r.onresult = (e) => {
+                            let t = ''; for(let i=0; i<e.results.length; i++) t += e.results[i][0].transcript + ' ';
+                            document.getElementById('out').innerHTML = '<b>Aday:</b> ' + t;
+                        };
+                        r.start();
+                    }
+                </script>
+            """, height=400)
+        else:
+            st.warning("Mülakat şu anda IK Uzmanı tarafından duraklatıldı. Ses kaydı alınmıyor.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with col_admin:
+        st.markdown("### 🛠️ Uzman Müdahale Paneli")
+        
+        # 1. ARA VERME / DEVAM ETME
+        if st.session_state.is_paused:
+            if st.button("▶️ Mülakata Devam Et", use_container_width=True):
+                st.session_state.is_paused = False
+                st.rerun()
+        else:
+            if st.button("⏸️ Mülakata Ara Ver", use_container_width=True):
+                st.session_state.is_paused = True
+                st.rerun()
+        
+        st.divider()
+        
+        # 2. VERİLERE MÜDAHALE (Canlı Puanlama)
+        st.write("**Anlık Veri Müdahalesi**")
+        st.slider("AI Teknik Uyum Puanı (Manuel Müdahale)", 0, 100, 75)
+        st.text_area("Özel Not Ekle (Diğer panelistler görebilir)", placeholder="Adayın bu cevabı yetersizdi...")
+        
+        # 3. DİNAMİK PROMPTLAR
+        with st.expander("📝 Envanter Tetikleyiciler", expanded=True):
+            st.button("🎯 DISC Analizi Yap", use_container_width=True)
+            st.button("📊 Metropolitan Raporla", use_container_width=True)
+        
+        st.divider()
+        if st.button("🛑 Mülakatı Bitir", type="primary", use_container_width=True):
+            st.session_state.page = "report"
             st.rerun()
 
-# 4. BİTİŞ EKRANI
-elif st.session_state.page == "finish":
-    st.balloons()
-    st.markdown('<div class="ah-card" style="max-width: 600px; margin: auto; text-align: center;">', unsafe_allow_html=True)
-    st.write("## Teşekkürler!")
-    st.write("Mülakatınız başarıyla tamamlandı ve analiz edilmek üzere IK birimine iletildi.")
-    st.write("Sonuçlar hakkında tarafınıza e-posta gönderilecektir.")
-    if st.button("Admin Paneline Dön (Simülasyon Sonu)"):
-        st.session_state.mode = "admin"
-        st.session_state.page = "dashboard"
+elif st.session_state.page == "report":
+    st.markdown("# 📑 Panel Değerlendirme Raporu")
+    l, r = st.columns([2, 1])
+    with l:
+        st.markdown('<div class="ah-card"><h4>Ortak Panel Kararı</h4><p>Tüm IK uzmanlarının ve AI analizinin ortak puanı: <b>%82</b></p><hr><p><b>Not:</b> Mülakat sırasında IK uzmanı tarafından teknik puan manuel olarak revize edilmiştir.</p></div>', unsafe_allow_html=True)
+    with r:
+        fig = go.Figure(go.Scatterpolar(r=[80, 70, 90, 85], theta=['Teknik','Uyum','DISC-D','Bilişsel'], fill='toself'))
+        st.plotly_chart(fig, use_container_width=True)
+    
+    if st.button("🏠 Dashboard'a Dön"):
+        st.session_state.page = "setup"
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
