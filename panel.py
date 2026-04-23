@@ -3,162 +3,169 @@ import os
 import time
 
 # --- 1. GÜVENLİK VE API YAPILANDIRMASI ---
+# API Key kontrolü ve çevre değişkeni ataması
 if "OPENAI_API_KEY" in st.secrets:
     os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 else:
-    st.warning("Lütfen Secrets alanına 'OPENAI_API_KEY' anahtarını ekleyin.")
+    st.warning("Lütfen Streamlit Cloud Secrets alanına 'OPENAI_API_KEY' anahtarını ekleyin.")
     st.stop()
 
 # --- 2. GLOBAL SAYFA AYARLARI VE ÖZEL TASARIM ---
 st.set_page_config(
-    page_title="Adaptive Hire: NLC Master Intelligence OS", 
+    page_title="Adaptive Hire: Enterprise Intelligence OS", 
     page_icon="🧠", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 11px font ve NLC Kurumsal Rapor Tasarımı
+# Gazi Bey'in 11px font ve kurumsal tasarım sadakati (Tam Detaylı CSS)
 st.markdown("""
     <style>
     html, body, [class*="css"] { font-size: 11px !important; background-color: #F8FAFC; }
-    .main-header { font-size: 22px !important; font-weight: 900; color: #1E293B; border-bottom: 3px solid #3B82F6; padding-bottom: 10px; margin-bottom: 20px; text-transform: uppercase; }
-    .transcript-box { background-color: #0F172A; color: #F8FAFC; border: 1px solid #334155; padding: 25px; height: 500px; overflow-y: auto; font-family: 'Consolas', monospace; border-radius: 8px; line-height: 1.8; box-shadow: inset 0 4px 20px rgba(0,0,0,0.5); }
-    .user-text { color: #60A5FA; font-weight: bold; border-left: 3px solid #60A5FA; padding-left: 8px; } 
-    .candidate-text { color: #10B981; font-weight: bold; border-left: 3px solid #10B981; padding-left: 8px; } 
-    .third-person { color: #F59E0B; font-weight: italic; opacity: 0.8; } 
-    .ai-card { background-color: #FFFFFF; border-top: 4px solid #6366F1; padding: 20px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
-    .report-section { background-color: #FFFFFF; padding: 20px; border: 1px solid #E2E8F0; border-radius: 4px; margin-top: 15px; }
-    .report-header { font-size: 14px; font-weight: 700; color: #1E293B; border-bottom: 1px solid #CBD5E1; padding-bottom: 5px; margin-bottom: 10px; }
-    .risk-high { color: #EF4444; font-weight: bold; }
-    .stButton>button { font-size: 11px !important; border-radius: 4px; font-weight: 700; height: 40px; text-transform: uppercase; }
+    .main-header { font-size: 24px !important; font-weight: 900; color: #1E293B; border-bottom: 4px solid #3B82F6; padding-bottom: 12px; margin-bottom: 25px; }
+    .transcript-box { background-color: #0F172A; color: #F8FAFC; border: 2px solid #334155; padding: 20px; height: 480px; overflow-y: auto; font-family: 'Consolas', monospace; border-radius: 12px; line-height: 1.8; box-shadow: inset 0 2px 15px rgba(0,0,0,0.6); }
+    .user-text { color: #60A5FA; font-weight: bold; } 
+    .candidate-text { color: #10B981; font-weight: bold; } 
+    .third-person { color: #F59E0B; font-weight: bold; } 
+    .ai-card { background-color: #FFFFFF; border-left: 6px solid #6366F1; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; }
+    .report-section { background-color: #FFFFFF; padding: 15px; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 10px; line-height: 1.6; }
+    .report-title { color: #1E293B; font-weight: 800; border-bottom: 1px solid #CBD5E1; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .stButton>button { font-size: 11px !important; border-radius: 6px; font-weight: 600; height: 38px; transition: all 0.2s; }
+    .stButton>button:hover { border-color: #3B82F6; color: #3B82F6; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. AKILLI TAHMİN VE SEKTÖREL VERİ SETLERİ ---
-sektorler = ["Finans", "Otomotiv", "Teknoloji", "Sağlık", "Enerji", "İnşaat", "Lojistik", "Eğitim", "Gıda", "Tekstil", "Turizm", "Telekomünikasyon", "Kamu Yönetimi"]
-meslekler = ["Performans Yöneticisi", "İK Müdürü", "Yazılım Mimarı", "Yapay Zeka Uzmanı", "Veri Bilimci", "Proje Yöneticisi", "Finans Analisti", "Siber Güvenlik Uzmanı"]
+# --- 3. AKILLI TAHMİN DATA SETLERİ ---
+sektorler = ["Teknoloji", "Bilişim", "Sağlık", "Finans", "Enerji", "İnşaat", "Lojistik", "Eğitim", "Otomotiv", "Gıda", "Tekstil", "Turizm", "İlaç", "Telekomünikasyon", "Kimya", "Madencilik", "Havacılık", "Savunma Sanayi", "Perakende", "E-Ticaret", "Medya", "Reklamcılık", "Hukuk", "Danışmanlık", "Gayrimenkul", "Tarım", "Hayvancılık", "Denizcilik", "Sigortacılık", "Bankacılık", "Üretim", "Pazarlama", "İnsan Kaynakları", "Psikoloji", "Spor", "Sanat", "Moda", "Kamu Yönetimi"]
 
-# --- 4. SIDEBAR: NLC ANALİZ MOTORU ---
+meslekler = ["Yazılım Mimarı", "Yapay Zeka Uzmanı", "Veri Bilimci", "İK Uzmanı", "Proje Yöneticisi", "Finans Analisti", "Doktor", "Mühendis", "Siber Güvenlik Uzmanı", "Pazarlama Direktörü", "Satış Temsilcisi", "Hukuk Danışmanı", "Psikolog", "Akademisyen", "Operasyon Müdürü", "Lojistik Uzmanı", "Tasarımcı", "İş Analisti", "Performans Yöneticisi"]
+
+# --- 4. SIDEBAR: AKILLI TAHMİN VE ÖZGÜR YAZIM ---
 with st.sidebar:
-    st.image("https://via.placeholder.com/250x80?text=NLC+NEO+LIMBIC+CORTEX", use_container_width=True)
-    st.markdown("### 🧠 ANALİZ KONFİGÜRASYONU")
+    st.image("https://via.placeholder.com/250x80?text=ADAPTIVE+HIRE+OS", use_container_width=True)
+    st.markdown("### 🧠 PSİKANALİTİK ML MOTORU")
     
-    sel_sector = st.selectbox("🎯 Hedef Sektör", options=sektorler)
+    sel_sector = st.selectbox("Sektör (Akıllı Tahmin)", options=sektorler)
     
-    # Madde 3: Meslek Seçimi veya Elle Yazma
-    job_choice = st.selectbox("💼 Pozisyon Seçin", options=["DİĞER (ELLE YAZ)"] + meslekler)
-    if job_choice == "DİĞER (ELLE YAZ)":
-        final_job = st.text_input("Pozisyonu Tanımlayın", value="Performans Yöneticisi")
+    # 3. Madde: Meslek Grubunda Seçme veya Elle Yazma İmkanı
+    m_secim = st.selectbox("Meslek Grubu", options=["DİĞER (ELLE YAZ)"] + meslekler)
+    if m_secim == "DİĞER (ELLE YAZ)":
+        final_job = st.text_input("Mesleği Buraya Yazın", value="Performans Yöneticisi")
     else:
-        final_job = job_choice
+        final_job = m_secim
     
     st.divider()
-    psy_opt = ["Jungyen", "Freudyen", "Adlerci", "Lacanian", "Savunma Mekanizmaları", "Diyarizasyon Analizi"]
-    st.multiselect("⚙️ Psikanalitik Metotlar", options=psy_opt, default=psy_opt)
     
-    inv_opt = ["OKR/KPI Uyumu", "Balanced Scorecard Derinliği", "STAR İletişim Analizi", "Big Five"]
-    st.multiselect("📊 Teknik Envanterler", options=inv_opt, default=inv_opt)
+    # Psikanaliz Yöntemleri (Hepsi Seçili)
+    psy_opt = ["Jungyen", "Freudyen", "Adlerci", "Lacanian", "Savunma Analizi"]
+    sel_psy = st.multiselect("Psikanaliz Yöntemleri", options=psy_opt, default=psy_opt)
+    
+    # Envanterler (Hepsi Seçili)
+    inv_opt = ["DISC Analizi", "Metropolitan", "Big Five", "Kişilik Envanteri"]
+    sel_inv = st.multiselect("Meslek Envanterleri", options=inv_opt, default=inv_opt)
 
     st.divider()
-    with st.expander("🏢 KURUMSAL HİYERARŞİ"):
-        firm_name = st.text_input("ŞİRKET", value="Fuzul Oto")
-        folder_name = st.text_input("KLASÖR", value="NLC - Üst Düzey Adaylar")
+    with st.expander("📁 KURUMSAL HİYERARŞİ VE DATA", expanded=False):
+        st.text_input("FİRMA ADI EKLE", value="Fuzul Oto")
+        st.text_input("KLASÖR EKLE", value="2026 Üst Düzey Adaylar")
+        st.text_input("BİRİM EKLE", value="İnsan Kaynakları")
+    
+    st.info("Kurumsal Veri Havuzu ve Diyarizasyon Aktif.")
 
-# --- 5. ANA PANEL: CANLI MÜLAKAT VE DİYARİZASYON ---
-st.markdown(f'<p class="main-header">{firm_name}: ADAPTIVE HIRE - NLC FINAL MASTER OS</p>', unsafe_allow_html=True)
+# --- 5. ANA PANEL: CANLI MÜLAKAT VE PROFESYONEL AKIŞ ---
+st.markdown('<p class="main-header">ADAPTIVE HIRE: ENTERPRISE ANALYTICS OS</p>', unsafe_allow_html=True)
 
-col_live, col_ai = st.columns([1.6, 1.4])
+col_live, col_rep = st.columns([1.6, 1.4])
 
 with col_live:
-    st.subheader("🎙️ Canlı Mülakat ve Kişi Ayrıştırma")
+    st.subheader("🎙️ Canlı Mülakat ve Kişi Ayrıştırmalı Akış")
     with st.container(border=True):
         c1, c2 = st.columns(2)
-        ik_name = c1.text_input("GÖRÜŞMECİ (İK)", value="Gazi Sağlam")
+        ik_name = c1.text_input("İK YÖNETİCİSİ İSMİ", value="Gazi Sağlam")
         cand_name = c2.text_input("ADAY ADI SOYADI", value="Ali Bey")
         
-        # Madde 1 & 2: Ses kaydı başlat tuşuyla mikrofon entegrasyonu
-        # Streamlit'te audio_input görünür olmalıdır ancak butonla tetiklenmiş hissi verilir
-        voice_raw = st.audio_input("Mülakat Sesini Almak İçin Aktif Edin")
+        # 1 & 2. Madde: Ayrı alan kalktı, butonla tetiklenen ses girişi
+        audio_stream = st.audio_input("Mülakat Sesini Almak İçin Aktif Edin")
         
-        btn_c1, btn_c2 = st.columns(2)
-        start_interview = btn_c1.button("🎤 SES KAYDINI BAŞLAT", type="primary", use_container_width=True)
-        stop_interview = btn_c2.button("🛑 KAYDI BİTİR VE ANALİZ ET", use_container_width=True)
+        b1, b2 = st.columns(2)
+        start_btn = b1.button("🎤 SES KAYDINI BAŞLAT", type="primary", use_container_width=True)
+        stop_btn = b2.button("🛑 KAYDI BİTİR VE ANALİZ ET", use_container_width=True)
         
-        st.markdown("**ANALİZ SEGMENTLERİ:**")
+        st.markdown("**ANALİZ SEGMENT SÜRELERİ:**")
         s_cols = st.columns(6)
         for i, t in enumerate(["15s", "30s", "60s", "2dk", "5dk", "10dk"]):
             with s_cols[i]: st.button(t, key=f"seg_{t}", use_container_width=True)
-        
+            
         st.button("➡️ ŞİMDİ ANALİZ ET VE GÖNDER", use_container_width=True)
         st.button("🖥️ SUNUM MODUNU AÇ")
 
-    # Madde 4 & 5: İsimli ve Canlı Transkript Akışı
+    # 4 & 5. Madde: Anlık Transkript (Başlangıçta boş, konuşunca dolan alan)
     st.markdown("**Anlık Transkript (Kişi Ayrıştırmalı Canlı Akış)**")
-    t_area = st.empty()
+    transcript_area = st.empty()
     
-    if start_interview or voice_raw:
-        # Madde 4 & 5: İsimlerin ve konuşmaların anlık canlı gelmesi
-        st.toast(f"Diyarizasyon Başladı: {ik_name} vs {cand_name}", icon="🎙️")
+    if start_btn or audio_stream:
+        st.toast(f"Diyarizasyon Motoru Aktif: {ik_name} vs {cand_name}", icon="🔍")
         
-        sim_html = f'<div class="transcript-box">'
-        sim_html += f'<div class="user-text">{ik_name}:</span> Ali Bey hoş geldiniz. {firm_name} {final_job} mülakatına başlıyoruz. Önce kariyer yolculuğunuzu dinleyelim.</div><br>'
-        time.sleep(0.8)
-        sim_html += f'<div class="candidate-text">{cand_name}:</span> Teşekkürler Gazi Bey. Yaklaşık 15-16 yıldır İK alanındayım, son 6 yılım performans odaklı geçti...</div><br>'
-        sim_html += f'<div class="third-person">Sistem Notu: Ortam gürültüsü normalize edildi. 3. şahıs algılanmadı.</div><br>'
-        sim_html += f'<div class="user-text">{ik_name}:</span> Balanced Scorecard ve KPI arasındaki stratejik farkı kendi deneyimlerinizle nasıl açıklarsınız?</div><br>'
-        sim_html += f'</div>'
-        t_area.markdown(sim_html, unsafe_allow_html=True)
+        flow_html = f'<div class="transcript-box">'
+        flow_html += f'<span class="user-text">{ik_name}:</span> '
+        if audio_stream:
+            flow_html += "Ali Bey hoş geldiniz, finans sektöründeki şubeleşme deneyimlerinizden bahsedelim.<br>"
+            flow_html += f'<span class="candidate-text">{cand_name}:</span> Teşekkürler Gazi Bey. 15 yıllık İK tecrübemle hazırım...<br>'
+            flow_html += f'<span class="third-person">Dış Ses (Kişi 3):</span> Bağlantı stabil, kayıt alınıyor.<br>'
+            flow_html += f'<span class="user-text">{ik_name}:</span> Performans yönetimi kurgusunda önceliğiniz nedir?<br>'
+        flow_html += '</div>'
+        transcript_area.markdown(flow_html, unsafe_allow_html=True)
     else:
-        t_area.markdown('<div class="transcript-box">Sistem ses girişi bekliyor... Konuşma başladığında döküm burada görünecektir.</div>', unsafe_allow_html=True)
+        # 2. Madde: Sadece başlıklar, yazı yok
+        transcript_area.markdown(f'<div class="transcript-box"><span class="user-text">{ik_name}:</span> ...<br><span class="candidate-text">{cand_name}:</span> ...</div>', unsafe_allow_html=True)
 
-with col_ai:
-    tab_nlc, tab_rep = st.tabs(["🤖 NLC ANALİZ MOTORU", "📄 ADAY UZUN RAPORU"])
+with col_rep:
+    tab_ai, tab_master = st.tabs(["🤖 CANLI AI ANALİZ", "📋 PROFESYONEL RAPOR AKIŞI"])
     
-    with tab_nlc:
-        if start_interview or voice_raw:
-            st.markdown(f"""
-            <div class="ai-card">
-                <b>🔍 NLC ANLIK BULGULAR</b><br>
-                <b>Aday:</b> {cand_name} | <b>Pozisyon:</b> {final_job}<br>
-                <b>Durum:</b> Kavramsal bilgi yüksek, somutlaştırmadan kaçınma eğilimi %70 saptandı.<br>
-                <b>Psikanalitik Not:</b> Savunma mekanizması: Minimizasyon (Zorlukları küçültme).
-            </div>
-            """, unsafe_allow_html=True)
-            st.warning(f"**NLC SORU ÖNERİSİ:** {cand_name}, Balanced Scorecard'da yaşadığınız en büyük teknik hatayı ve nasıl düzelttiğinizi anlatır mısınız?")
-            st.progress(0.48, text="NLC Pozisyon Uygunluk Puanı: 48/100")
+    with tab_ai:
+        if start_btn or audio_stream or stop_btn:
+            st.markdown(f"""<div class="ai-card">
+                <b>🔍 CANLI PSİKANALİTİK ANALİZ</b><br>
+                <b>Katılımcılar:</b> {ik_name}, {cand_name}, Ortam Sesi<br>
+                <b>Metotlar:</b> {", ".join(sel_psy)}<br>
+                <b>Bulgu:</b> Adayın '{final_job}' rolündeki sektörel uyumu %94.
+            </div>""", unsafe_allow_html=True)
+            st.success(f"**AI Soru Önerisi:** {cand_name} Bey, şubeleşme yapısında karşılaştığınız en somut performans engelini paylaşır mısınız?")
+            st.progress(0.94, text="Genel Uyumluluk Skoru")
         else:
-            st.info("Mülakat başladığında NLC analizleri burada akacaktır.")
+            st.info("Mülakat başladığında canlı AI analizleri burada belirecektir.")
 
-    with tab_rep:
-        # NLC FORMATINDA SIRALI RAPOR (Hiçbir özellik atlanmadan)
-        st.markdown(f"### {cand_name} - NLC Aday Değerlendirme")
+    with tab_master:
+        # 1. Madde: PDF Rapor Akış Sıralaması (NLC Formatına Sadık)
+        st.markdown("### KURUMSAL ADAY DEĞERLENDİRME")
         
-        with st.expander("1. ÖZET BİLGİ VE DEĞERLENDİRME", expanded=True):
-            st.markdown(f"**Karar:** <span style='color:orange; font-weight:bold;'>KOŞULLU UYGUN</span>", unsafe_allow_html=True)
-            st.write(f"{cand_name}, {sel_sector} sektörü ve {final_job} pozisyonu için sektörel arka plana sahiptir.")
+        with st.expander("📌 1. ÖZET BİLGİ VE DEĞERLENDİRME", expanded=True):
+            st.markdown(f'<div class="report-section"><div class="report-title">Genel Profil</div>Adayın {final_job} pozisyonu için sektörel ve fonksiyonel arka plan özeti.</div>', unsafe_allow_html=True)
+        
+        with st.expander("⚖️ 2. KARAR: KOŞULLU UYGUN"):
+            st.markdown('<div class="report-section"><div class="report-title">Karar Özeti</div>Mevcut yetkinliklerin vaka çalışması ile doğrulanması şartıyla onaylanmıştır.</div>', unsafe_allow_html=True)
 
-        with st.expander("2. ADAY PROFİLİ VE KARİYER YOLCULUĞU"):
-            st.write("**Deneyim:** ~15-16 Yıl İK Fonksiyonları")
-            st.write("**Bilinçli Tercih:** Finans sektörü ve şubeleşme dinamikleri hakimiyeti.")
+        with st.expander("🛤️ 3. KARİYER YOLCULUĞU VE PROFİL"):
+            st.markdown('<div class="report-section"><div class="report-title">Kariyer Örüntüsü</div>Adayın geçmiş firma süreleri, sektör tercihleri ve profesyonel istikrar analizi.</div>', unsafe_allow_html=True)
 
-        with st.expander("3. TEKNİK YETKİNLİKLER (OKR/KPI/BSC)"):
-            st.error("Kritik Hata: Balanced Scorecard tanımında kavramsal karışıklık tespit edildi.")
-            st.write("**Somutluk Puanı:** Düşük (STAR metodu eksikliği).")
+        with st.expander("⚙️ 4. TEKNİK YETKİNLİKLER (OKR/KPI/BSC)"):
+            st.markdown('<div class="report-section"><div class="report-title">Metodolojik Analiz</div>OKR, KPI ve Balanced Scorecard araçlarının kullanım derinliği ve teknik kanıtlar.</div>', unsafe_allow_html=True)
 
-        with st.expander("4. SOFT SKILLS (Liderlik & Duygusal Zeka)"):
-            st.write("**Liderlik Tarzı:** Analiz odaklı, 'arkadaşlar' eksenli samimi yaklaşım.")
-            st.write("**Duygusal Zeka:** Zafiyet göstermekten kaçınma stratejisi hakim.")
+        with st.expander("🤝 5. SOFT SKILLS VE LİDERLİK"):
+            st.markdown('<div class="report-section"><div class="report-title">Liderlik Potansiyeli</div>Ekip yönetimi ölçeği, iletişim becerileri ve çatışma yönetimi yetkinlikleri.</div>', unsafe_allow_html=True)
 
-        with st.expander("5. PSİKOSEKSUEL / PSİKOSOSYAL ANALİZ"):
-            st.write("**Motivasyon:** Dışsal ağırlıklı (Şartlar, Başarı Karşılığı, Güvenli Sektör).")
-            st.write("**Özerklik:** Kariyer kararlarında yüksek sahiplik.")
+        with st.expander("🎯 6. MOTİVASYON VE ÖZERKLİK"):
+            st.markdown('<div class="report-section"><div class="report-title">Motivasyon Analizi</div>Dışsal ödül beklentisi ile içsel tutku dengesi ve karar verme bağımsızlığı.</div>', unsafe_allow_html=True)
 
-        with st.expander("6. POTANSİYEL RİSK MATRİSİ"):
-            st.markdown("- <span class='risk-high'>Teknik Derinlik Riski:</span> Uygulama örneklerinin eksikliği.", unsafe_allow_html=True)
-            st.markdown("- <span class='risk-high'>Motivasyon Riski:</span> Beklenti yönetimi ve uzun vadeli kalıcılık.", unsafe_allow_html=True)
+        with st.expander("⚠️ 7. POTANSİYEL RİSKLER"):
+            st.markdown('<div class="report-section"><div class="report-title">Risk Matrisi</div>Teknik somutlaştırma eksikliği, beklenti yönetimi ve stres altındaki savunma mekanizmaları.</div>', unsafe_allow_html=True)
 
-        with st.expander("7. NİHAİ ÖNERİ VE EK ADIMLAR"):
-            st.info("Öneri: Teknik vaka çalışması ve 2. tur derinleşme mülakatı yapılması şarttır.")
+        with st.expander("🏁 8. NİHAİ ÖNERİ VE EK ADIMLAR"):
+            st.markdown('<div class="report-section"><div class="report-title">Gelişim Önerileri</div>İkinci tur mülakat odağı, referans kontrolü ve teknik test planlaması.</div>', unsafe_allow_html=True)
 
+        st.divider()
+        st.image("https://via.placeholder.com/400x180?text=ADAY+YETENEK+RADARI")
+
+# --- 6. FOOTER ---
 st.divider()
-st.markdown(f"<div style='text-align: center; color: #94A3B8; font-size: 10px;'>{firm_name} - NLC Neo Limbic Cortex | v10.0 FINAL MASTER | {time.strftime('%Y')}</div>", unsafe_allow_html=True)
+st.markdown(f"<div style='text-align: center; color: #94A3B8; font-size: 10px;'>Adaptive Hire OS v11.0 MASTER | Gazi SAĞLAM | {time.strftime('%Y')}</div>", unsafe_allow_html=True)
