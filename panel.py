@@ -2,15 +2,11 @@ import streamlit as st
 import os
 
 # --- API KEY YAPILANDIRMASI ---
-# Streamlit Cloud üzerinde 'Settings > Secrets' kısmına eklediğiniz 
-# OPENAI_API_KEY değerini çeker.
+# Bu bölümdeki isimlerin Secrets alanıyla birebir eşleşmesi gerekir.
 if "OPENAI_API_KEY" in st.secrets:
     os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 else:
-    st.error("Lütfen Secrets alanına 'OPENAI_API_KEY' anahtarını ekleyin.")
-    st.stop()
-else:
-    st.error("Lütfen Streamlit Cloud Secrets alanına 'OPENAI_API_KEY' anahtarını ekleyin.")
+    st.warning("Lütfen Streamlit Cloud Secrets alanına 'OPENAI_API_KEY' anahtarını ekleyin.")
     st.stop()
 
 # --- SAYFA AYARLARI ---
@@ -20,7 +16,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ARAYÜZ TASARIMI (Sizin isteğinize göre: Sade ve 11px odaklı) ---
+# --- ARAYÜZ TASARIMI (11px Sade Tasarım) ---
 st.markdown("""
     <style>
     html, body, [class*="css"] {
@@ -33,56 +29,37 @@ st.markdown("""
         color: #1E3A8A;
         margin-bottom: 20px;
     }
-    .stButton>button {
-        font-size: 11px;
-    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- SIDEBAR: İK UZMANI YÖNETİM ALANI ---
+# --- SIDEBAR: KURUMSAL PANEL ---
 with st.sidebar:
     st.image("https://via.placeholder.com/150x50?text=Adaptive+Hire", use_container_width=True)
     st.markdown("### Kurumsal Panel")
     
-    # İK Uzmanı için Klasörleme Mantığı
-    with st.expander("📁 Klasör Yapılandırma", expanded=True):
-        folder_name = st.text_input("Yeni Klasör Adı")
+    with st.expander("📁 Veri Yapılandırma", expanded=True):
+        folder_name = st.text_input("Klasör Adı")
         company_name = st.text_input("Firma Adı")
-        unit_name = st.text_input("Çalışılan Birim")
+        unit_name = st.text_input("Birim")
         
-        if st.button("Yapıyı Oluştur"):
-            st.success(f"{folder_name} başarıyla oluşturuldu.")
+        if st.button("Yapıyı Kaydet"):
+            st.success(f"{folder_name} Kaydedildi.")
 
-    st.divider()
-    st.info("Kullanıcı: gazisaglam1@gmail.com")
-
-# --- ANA PANEL ---
-st.markdown('<p class="main-header">Mülakat Asistanı & Veri Yönetimi</p>', unsafe_allow_html=True)
+# --- ANA EKRAN ---
+st.markdown('<p class="main-header">Mülakat Asistanı & Analiz Paneli</p>', unsafe_allow_html=True)
 
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    st.subheader("Aktif Mülakat Alanı")
-    # Mülakat ekleme adımları
     with st.container(border=True):
-        st.markdown("**Yeni Mülakat Başlat**")
-        candidate_name = st.text_input("Aday Adı Soyadı")
-        interview_type = st.selectbox("Mülakat Tipi", ["Teknik", "Yetkinlik Bazlı", "Kültür Uyumu"])
-        
-        if st.button("Mülakat Asistanını Çalıştır"):
-            st.write(f"{candidate_name} için mülakat asistanı hazırlandı...")
+        st.markdown("**Aktif Mülakat Alanı**")
+        candidate = st.text_input("Aday Adı Soyadı")
+        if st.button("Asistanı Başlat"):
+            st.info(f"{candidate} için mülakat süreci başlatılıyor...")
 
 with col2:
-    st.subheader("Hızlı Raporlama")
-    # Daha sonra raporlamalar için data alanı
-    st.write("Son 5 Mülakat Verisi")
-    data_preview = {
-        "Aday": ["Örnek Aday 1", "Örnek Aday 2"],
-        "Durum": ["Analiz Edildi", "Beklemede"],
-        "Skor": [85, "-"]
-    }
-    st.table(data_preview)
+    st.markdown("**Hızlı Raporlama**")
+    st.table({"Aday": ["Örnek Aday"], "Durum": ["Beklemede"]})
 
-# --- ALT BİLGİ ---
-st.markdown("---")
-st.caption("Adaptive Hire OS - Yapay Zeka Destekli İK Yönetim Sistemi")
+st.divider()
+st.caption("Adaptive Hire OS - Talent Intelligence OS")
