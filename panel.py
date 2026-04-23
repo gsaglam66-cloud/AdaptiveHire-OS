@@ -5,7 +5,10 @@ import os
 # Streamlit Cloud üzerinde 'Settings > Secrets' kısmına eklediğiniz 
 # OPENAI_API_KEY değerini çeker.
 if "OPENAI_API_KEY" in st.secrets:
-    os.environ["AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY"] = st.secrets["AIzaSyAv-jTe5J2Bogn4C1EZoVILclEAvReaDcY"]
+    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+else:
+    st.error("Lütfen Secrets alanına 'OPENAI_API_KEY' anahtarını ekleyin.")
+    st.stop()
 else:
     st.error("Lütfen Streamlit Cloud Secrets alanına 'OPENAI_API_KEY' anahtarını ekleyin.")
     st.stop()
